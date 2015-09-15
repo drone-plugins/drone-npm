@@ -1,12 +1,16 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
+	"path"
+	"strings"
 
 	"github.com/drone/drone-plugin-go/plugin"
 )
@@ -28,10 +32,12 @@ type NpmPackage struct {
 func main() {
 	repo := plugin.Repo{}
 	build := plugin.Build{}
+	workspace := plugin.Workspace{}
 	vargs := Npm{}
 
 	plugin.Param("build", &build)
 	plugin.Param("repo", &repo)
+	plugin.Param("workspace", &workspace)
 	plugin.Param("vargs", &vargs)
 
 	// parse the parameters
@@ -57,12 +63,27 @@ func main() {
 	}
 
 	// set defaults
+	var globalRegistry bool
+
 	if len(vargs.Registry) == 0 {
 		vargs.Registry = "https://registry.npmjs.org"
+		globalRegistry = true
+	} else {
+		globalRegistry = false
 	}
 
 	// get the package info
-	npmPackage, err := readPackageFile("package.json")
+	var packagePath string
+
+	if len(vargs.Folder) == 0 {
+		packagePath = path.Join(workspace.Path)
+	} else {
+		packagePath = path.Join(workspace.Path, vargs.Folder)
+	}
+
+	packageFile := path.Join(packagePath, "package.json")
+
+	npmPackage, err := readPackageFile(packageFile)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -74,6 +95,42 @@ func main() {
 
 	if publish {
 		fmt.Println("Attempting to publish package")
+
+		// write the npmrc file
+		npmrcPath := path.Join(packagePath, ".npmrc")
+		err := writeNpmrcFile(vargs, npmrcPath)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		var cmds []*exec.Cmd
+
+		// write registry command
+		if !globalRegistry {
+			cmds = append(cmds, registryCommand(vargs))
+		}
+
+		// write auth command
+		if vargs.AlwaysAuth {
+			cmds = append(cmds, alwaysAuthCommand())
+		}
+
+		// write the publish command
+		cmds = append(cmds, publishCommand())
+
+		// run the commands
+		for _, cmd := range cmds {
+			cmd.Dir = packagePath
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			trace(cmd)
+			err := cmd.Run()
+			if err != nil {
+				os.Exit(1)
+			}
+		}
 	} else {
 		fmt.Println("Package already published")
 	}
@@ -142,4 +199,38 @@ func shouldPublishPackage(vargs Npm, npmPackage *NpmPackage) (bool, error) {
 	} else {
 		return true, nil
 	}
+}
+
+/// Writes the npmrc file
+func writeNpmrcFile(vargs Npm, path string) error {
+	// get the base64 encoded string
+	authString := fmt.Sprintf("%s:%s", vargs.Username, vargs.Password)
+	encoded := base64.StdEncoding.EncodeToString([]byte(authString))
+
+	// create the file contents
+	contents := fmt.Sprintf("_auth = %s\nemail = %s", encoded, vargs.Email)
+
+	// write the file
+	return ioutil.WriteFile(path, []byte(contents), 0644)
+}
+
+// Sets the npm registry
+func registryCommand(vargs Npm) *exec.Cmd {
+	return exec.Command("npm", "config", "set", "registry", vargs.Registry)
+}
+
+// Sets the always off flag
+func alwaysAuthCommand() *exec.Cmd {
+	return exec.Command("npm", "config", "set", "always-auth", "true")
+}
+
+// Publishes the package
+func publishCommand() *exec.Cmd {
+	return exec.Command("npm", "publish")
+}
+
+// Trace writes each command to standard error (preceded by a ‘$ ’) before it
+// is executed. Used for debugging your build.
+func trace(cmd *exec.Cmd) {
+	fmt.Println("$", strings.Join(cmd.Args, " "))
 }
