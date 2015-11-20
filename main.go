@@ -12,7 +12,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/drone/drone-plugin-go/plugin"
+	"github.com/drone/drone-go/drone"
+	"github.com/drone/drone-go/plugin"
 )
 
 type Npm struct {
@@ -30,9 +31,9 @@ type NpmPackage struct {
 }
 
 func main() {
-	repo := plugin.Repo{}
-	build := plugin.Build{}
-	workspace := plugin.Workspace{}
+	repo := drone.Repo{}
+	build := drone.Build{}
+	workspace := drone.Workspace{}
 	vargs := Npm{}
 
 	plugin.Param("build", &build)
@@ -97,8 +98,7 @@ func main() {
 		fmt.Println("Attempting to publish package")
 
 		// write the npmrc file
-		npmrcPath := path.Join(packagePath, ".npmrc")
-		err := writeNpmrcFile(vargs, npmrcPath)
+		err := writeNpmrcFile(vargs)
 
 		if err != nil {
 			fmt.Println(err.Error())
@@ -202,7 +202,8 @@ func shouldPublishPackage(vargs Npm, npmPackage *NpmPackage) (bool, error) {
 }
 
 /// Writes the npmrc file
-func writeNpmrcFile(vargs Npm, path string) error {
+func writeNpmrcFile(vargs Npm) error {
+
 	// get the base64 encoded string
 	authString := fmt.Sprintf("%s:%s", vargs.Username, vargs.Password)
 	encoded := base64.StdEncoding.EncodeToString([]byte(authString))
@@ -211,7 +212,7 @@ func writeNpmrcFile(vargs Npm, path string) error {
 	contents := fmt.Sprintf("_auth = %s\nemail = %s", encoded, vargs.Email)
 
 	// write the file
-	return ioutil.WriteFile(path, []byte(contents), 0644)
+	return ioutil.WriteFile("/root/.npmrc", []byte(contents), 0644)
 }
 
 // Sets the npm registry
