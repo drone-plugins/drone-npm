@@ -30,7 +30,13 @@ type NpmPackage struct {
 	Version string `json:"version"`
 }
 
+var (
+	buildDate string
+)
+
 func main() {
+	fmt.Printf("Drone NPM Plugin built at %s\n", buildDate)
+
 	repo := drone.Repo{}
 	build := drone.Build{}
 	workspace := drone.Workspace{}
