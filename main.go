@@ -31,11 +31,11 @@ type NpmPackage struct {
 }
 
 var (
-	buildDate string
+	buildCommit string
 )
 
 func main() {
-	fmt.Printf("Drone NPM Plugin built at %s\n", buildDate)
+	fmt.Printf("Drone NPM Plugin built from %s\n", buildCommit)
 
 	repo := drone.Repo{}
 	build := drone.Build{}
