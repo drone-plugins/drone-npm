@@ -4,7 +4,7 @@
 [![Coverage Status](https://aircover.co/badges/drone-plugins/drone-npm/coverage.svg)](https://aircover.co/drone-plugins/drone-npm)
 [![](https://badge.imagelayers.io/plugins/drone-npm:latest.svg)](https://imagelayers.io/?images=plugins/drone-npm:latest 'Get your own badge on imagelayers.io')
 
-Drone plugin to publish files and artifacts to a NPM registry
+Drone plugin to publish files and artifacts to a NPM registry. For the usage information and a listing of the available options please take a look at [the docs](DOCS.md).
 
 ## Binary
 
