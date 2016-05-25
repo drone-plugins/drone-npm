@@ -6,98 +6,52 @@
 
 Drone plugin to publish files and artifacts to a NPM registry. For the usage information and a listing of the available options please take a look at [the docs](DOCS.md).
 
-## Binary
+## Build
 
-Build the binary using `make`:
+Build the binary with the following commands:
 
 ```
-make deps build
-```
-
-### Example
-
-```sh
-./drone-npm <<EOF
-{
-    "repo": {
-        "clone_url": "git://github.com/drone/drone",
-        "owner": "drone",
-        "name": "drone",
-        "full_name": "drone/drone"
-    },
-    "system": {
-        "link_url": "https://beta.drone.io"
-    },
-    "build": {
-        "number": 22,
-        "status": "success",
-        "started_at": 1421029603,
-        "finished_at": 1421029813,
-        "message": "Update the Readme",
-        "author": "johnsmith",
-        "author_email": "john.smith@gmail.com"
-        "event": "push",
-        "branch": "master",
-        "commit": "436b7a6e2abaddfd35740527353e78a227ddcb2c",
-        "ref": "refs/heads/master"
-    },
-    "workspace": {
-        "root": "/drone/src",
-        "path": "/drone/src/github.com/drone/drone"
-    },
-    "vargs": {
-        "username": "octocat",
-        "password": "pa$$word",
-        "email": "octocat@github.com"
-    }
-}
-EOF
+export GO15VENDOREXPERIMENT=1
+go build
+go test
 ```
 
 ## Docker
 
-Build the container using `make`:
+Build the docker image with the following commands:
 
 ```
-make deps docker
+export GO15VENDOREXPERIMENT=1
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -tags netgo
 ```
 
-### Example
+Please note incorrectly building the image for the correct x64 linux and with GCO disabled will result in an error when running the Docker image:
+
+```
+docker: Error response from daemon: Container command
+'/bin/drone-git' not found or does not exist..
+```
+
+## Usage
+
+Push to public NPM registry
 
 ```sh
-docker run -i plugins/drone-npm <<EOF
-{
-    "repo": {
-        "clone_url": "git://github.com/drone/drone",
-        "owner": "drone",
-        "name": "drone",
-        "full_name": "drone/drone"
-    },
-    "system": {
-        "link_url": "https://beta.drone.io"
-    },
-    "build": {
-        "number": 22,
-        "status": "success",
-        "started_at": 1421029603,
-        "finished_at": 1421029813,
-        "message": "Update the Readme",
-        "author": "johnsmith",
-        "author_email": "john.smith@gmail.com"
-        "event": "push",
-        "branch": "master",
-        "commit": "436b7a6e2abaddfd35740527353e78a227ddcb2c",
-        "ref": "refs/heads/master"
-    },
-    "workspace": {
-        "root": "/drone/src",
-        "path": "/drone/src/github.com/drone/drone"
-    },
-    "vargs": {
-        "username": "octocat",
-        "password": "pa$$word",
-        "email": "octocat@github.com"
-    }
-}
-EOF
-```
+docker run --rm \
+  -e NPM_USERNAME=drone \
+  -e NPM_PASSWORD=password \
+  -e NPM_EMAIL=drone@drone.io \
+  plugins/npm
+``
+
+Push to private NPM registry
+
+```sh
+docker run --rm \
+  -e NPM_USERNAME=drone \
+  -e NPM_PASSWORD=password \
+  -e NPM_EMAIL=drone@drone.io \
+  -e NPM_REGISTRY=http://myregistry.com \
+  -e NPM_ALWAYS_AUTH=true
+  plugins/npm
+``
