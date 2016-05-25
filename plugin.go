@@ -167,19 +167,19 @@ func shouldPublishPackage(config Config, npmPackage *NpmPackage) (bool, error) {
 
 	defer resp.Body.Close()
 
-  statusCode := resp.StatusCode
+	statusCode := resp.StatusCode
 
 	// look for a 404 to see if the package should be published
 	if statusCode == http.StatusNotFound {
-    return true, nil
-  } else if statusCode == http.StatusOK {
+		return true, nil
+	} else if statusCode == http.StatusOK {
 		return false, errors.New("Package already published")
 	} else {
-    contents, err := ioutil.ReadAll(resp.Body)
+		contents, err := ioutil.ReadAll(resp.Body)
 
-    if err != nil {
-      return false, err
-    }
+		if err != nil {
+			return false, err
+		}
 
 		return false, errors.New(fmt.Sprintf("Error Occurred. Status %d\nBody:%s", statusCode, contents))
 	}
