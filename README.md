@@ -42,7 +42,7 @@ docker run --rm \
   -e NPM_PASSWORD=password \
   -e NPM_EMAIL=drone@drone.io \
   plugins/npm
-``
+```
 
 Push to private NPM registry
 
