@@ -25,7 +25,7 @@ type (
 		Registry   string
 		Folder     string
 		AlwaysAuth bool
-		SkipVerify bool
+    SkipVerify bool
 	}
 
 	NpmPackage struct {
@@ -41,6 +41,28 @@ type (
 const GlobalRegistry = "https://registry.npmjs.org"
 
 func (p Plugin) Exec() error {
+	// check for a username
+	if len(p.Config.Username) == 0 {
+		log.Error("No username provided")
+		return errors.New("No username provided")
+	}
+
+	// check for an email
+	if len(p.Config.Email) == 0 {
+		log.Error("No email address provided")
+		return errors.New("No email address provided")
+	}
+
+	// check for a password
+	if len(p.Config.Password) == 0 {
+		log.Warning("No password provided")
+	}
+
+	log.WithFields(log.Fields{
+		"username": p.Config.Username,
+		"email": p.Config.Email,
+	}).Info("Specified credentials")
+
 	// read the package
 	packagePath := path.Join(p.Config.Folder, "package.json")
 
@@ -77,8 +99,8 @@ func (p Plugin) Exec() error {
 
 		var cmds []*exec.Cmd
 
-		// write the version command
-		cmds = append(cmds, versionCommand())
+    // write the version command
+    cmds = append(cmds, versionCommand())
 
 		// write registry command
 		if p.Config.Registry != GlobalRegistry {
@@ -90,10 +112,10 @@ func (p Plugin) Exec() error {
 			cmds = append(cmds, alwaysAuthCommand())
 		}
 
-		// write skip verify command
-		if p.Config.SkipVerify {
-			cmds = append(cmds, skipVerifyCommand())
-		}
+    // write skip verify command
+    if p.Config.SkipVerify {
+      cmds = append(cmds, skipVerifyCommand())
+    }
 
 		// write the publish command
 		cmds = append(cmds, publishCommand())
@@ -168,14 +190,14 @@ func shouldPublishPackage(config Config, npmPackage *NpmPackage) (bool, error) {
 		req.SetBasicAuth(config.Username, config.Password)
 	}
 
-	// skip verify if necessary
-	if config.SkipVerify {
-		http.DefaultTransport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
+  // skip verify if necessary
+  if config.SkipVerify {
+    http.DefaultTransport = &http.Transport{
+      TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
 
-		log.Warning("Skipping SSL verification")
-	}
+    log.Warning("Skipping SSL verification")
+  }
 
 	// get the response
 	resp, err := http.DefaultClient.Do(req)
@@ -219,7 +241,7 @@ func writeNpmrcFile(config Config) error {
 
 // Gets the npm version
 func versionCommand() *exec.Cmd {
-	return exec.Command("npm", "--version")
+  return exec.Command("npm", "--version")
 }
 
 // Sets the npm registry
@@ -234,7 +256,7 @@ func alwaysAuthCommand() *exec.Cmd {
 
 // Skip ssl verification
 func skipVerifyCommand() *exec.Cmd {
-	return exec.Command("npm", "config", "set", "strict-ssl", "false")
+  return exec.Command("npm", "config", "set", "ca=\"\"")
 }
 
 // Publishes the package
