@@ -43,7 +43,7 @@ docker run --rm \
   -e NPM_EMAIL=drone@drone.io \
   -v $(pwd):$(pwd) \
   -w $(pwd) \  
-  plugins/npm
+  plugins/drone-npm
 ```
 
 Push to private NPM registry
@@ -57,5 +57,5 @@ docker run --rm \
   -e NPM_ALWAYS_AUTH=true \
   -v $(pwd):$(pwd) \
   -w $(pwd) \  
-  plugins/npm
+  plugins/drone-npm
 ```
