@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/codegangsta/cli"
 	_ "github.com/joho/godotenv/autoload"
