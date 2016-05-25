@@ -234,7 +234,7 @@ func alwaysAuthCommand() *exec.Cmd {
 
 // Skip ssl verification
 func skipVerifyCommand() *exec.Cmd {
-	return exec.Command("npm", "config", "set", "ca=\"\"")
+	return exec.Command("npm", "config", "set", "strict-ssl", "false")
 }
 
 // Publishes the package
