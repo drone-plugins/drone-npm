@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -24,6 +25,7 @@ type (
 		Registry   string
 		Folder     string
 		AlwaysAuth bool
+		SkipVerify bool
 	}
 
 	NpmPackage struct {
@@ -75,6 +77,9 @@ func (p Plugin) Exec() error {
 
 		var cmds []*exec.Cmd
 
+		// write the version command
+		cmds = append(cmds, versionCommand())
+
 		// write registry command
 		if p.Config.Registry != GlobalRegistry {
 			cmds = append(cmds, registryCommand(p.Config.Registry))
@@ -83,6 +88,11 @@ func (p Plugin) Exec() error {
 		// write auth command
 		if p.Config.AlwaysAuth {
 			cmds = append(cmds, alwaysAuthCommand())
+		}
+
+		// write skip verify command
+		if p.Config.SkipVerify {
+			cmds = append(cmds, skipVerifyCommand())
 		}
 
 		// write the publish command
@@ -158,6 +168,15 @@ func shouldPublishPackage(config Config, npmPackage *NpmPackage) (bool, error) {
 		req.SetBasicAuth(config.Username, config.Password)
 	}
 
+	// skip verify if necessary
+	if config.SkipVerify {
+		http.DefaultTransport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+
+		log.Warning("Skipping SSL verification")
+	}
+
 	// get the response
 	resp, err := http.DefaultClient.Do(req)
 
@@ -198,6 +217,11 @@ func writeNpmrcFile(config Config) error {
 	return ioutil.WriteFile("/root/.npmrc", []byte(contents), 0644)
 }
 
+// Gets the npm version
+func versionCommand() *exec.Cmd {
+	return exec.Command("npm", "--version")
+}
+
 // Sets the npm registry
 func registryCommand(registry string) *exec.Cmd {
 	return exec.Command("npm", "config", "set", "registry", registry)
@@ -206,6 +230,11 @@ func registryCommand(registry string) *exec.Cmd {
 // Sets the always off flag
 func alwaysAuthCommand() *exec.Cmd {
 	return exec.Command("npm", "config", "set", "always-auth", "true")
+}
+
+// Skip ssl verification
+func skipVerifyCommand() *exec.Cmd {
+	return exec.Command("npm", "config", "set", "ca=\"\"")
 }
 
 // Publishes the package

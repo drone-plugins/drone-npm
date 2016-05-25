@@ -48,6 +48,11 @@ func main() {
 			Usage:  "always authorize",
 			EnvVar: "PLUGIN_ALWAYS_AUTH,NPM_ALWAYS_AUTH",
 		},
+		cli.BoolFlag{
+			Name:   "skip_verify",
+			Usage:  "skip SSL verification",
+			EnvVar: "PLUGIN_SKIP_VERIFY",
+		},
 	}
 
 	app.Run(os.Args)
@@ -62,6 +67,7 @@ func run(c *cli.Context) error {
 			Registry:   c.String("registry"),
 			Folder:     c.String("folder"),
 			AlwaysAuth: c.Bool("always_auth"),
+			SkipVerify: c.Bool("skip_verify"),
 		},
 	}
 
