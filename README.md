@@ -41,6 +41,8 @@ docker run --rm \
   -e NPM_USERNAME=drone \
   -e NPM_PASSWORD=password \
   -e NPM_EMAIL=drone@drone.io \
+  -v $(pwd):$(pwd) \
+  -w $(pwd) \  
   plugins/npm
 ```
 
@@ -52,6 +54,8 @@ docker run --rm \
   -e NPM_PASSWORD=password \
   -e NPM_EMAIL=drone@drone.io \
   -e NPM_REGISTRY=http://myregistry.com \
-  -e NPM_ALWAYS_AUTH=true
+  -e NPM_ALWAYS_AUTH=true \
+  -v $(pwd):$(pwd) \
+  -w $(pwd) \  
   plugins/npm
 ``
