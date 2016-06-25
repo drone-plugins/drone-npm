@@ -49,11 +49,6 @@ func main() {
 			EnvVar: "PLUGIN_FOLDER",
 		},
 		cli.BoolFlag{
-			Name:   "always_auth",
-			Usage:  "always authorize",
-			EnvVar: "PLUGIN_ALWAYS_AUTH,NPM_ALWAYS_AUTH",
-		},
-		cli.BoolFlag{
 			Name:   "skip_verify",
 			Usage:  "skip SSL verification",
 			EnvVar: "PLUGIN_SKIP_VERIFY",
@@ -72,7 +67,6 @@ func run(c *cli.Context) error {
 			Email:      c.String("email"),
 			Registry:   c.String("registry"),
 			Folder:     c.String("folder"),
-			AlwaysAuth: c.Bool("always_auth"),
 			SkipVerify: c.Bool("skip_verify"),
 		},
 	}

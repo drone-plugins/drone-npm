@@ -25,7 +25,6 @@ type (
 		Email      string
 		Registry   string
 		Folder     string
-		AlwaysAuth bool
 		SkipVerify bool
 	}
 
