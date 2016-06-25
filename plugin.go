@@ -1,15 +1,15 @@
 package main
 
 import (
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"os/user"
 	"path"
 	"strings"
 
@@ -17,9 +17,11 @@ import (
 )
 
 type (
+	// Config for the plugin.
 	Config struct {
 		Username   string
 		Password   string
+		Token      string
 		Email      string
 		Registry   string
 		Folder     string
@@ -27,257 +29,309 @@ type (
 		SkipVerify bool
 	}
 
-	NpmPackage struct {
-		Name    string `json:"name"`
-		Version string `json:"version"`
+	npmPackage struct {
+		Name    string    `json:"name"`
+		Version string    `json:"version"`
+		Config  npmConfig `json:"publishConfig"`
 	}
 
+	npmConfig struct {
+		Registry string `json:"registry"`
+	}
+
+	// Plugin values
 	Plugin struct {
 		Config Config
 	}
 )
 
+// GlobalRegistry defines the default NPM registry.
 const GlobalRegistry = "https://registry.npmjs.org"
 
+// Exec executes the plugin.
 func (p Plugin) Exec() error {
-	// check for a username
-	if len(p.Config.Username) == 0 {
-		log.Error("No username provided")
-		return errors.New("No username provided")
-	}
-
-	// check for an email
-	if len(p.Config.Email) == 0 {
-		log.Error("No email address provided")
-		return errors.New("No email address provided")
-	}
-
-	// check for a password
-	if len(p.Config.Password) == 0 {
-		log.Warning("No password provided")
-	}
-
-	log.WithFields(log.Fields{
-		"username": p.Config.Username,
-		"email":    p.Config.Email,
-	}).Info("Specified credentials")
-
-	// read the package
-	packagePath := path.Join(p.Config.Folder, "package.json")
-
-	npmPackage, err := readPackageFile(packagePath)
+	// write npmrc for authentication
+	err := writeNpmrc(p.Config)
 
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Error("Could not read package.json")
 		return err
 	}
 
-	log.WithFields(log.Fields{
-		"name":    npmPackage.Name,
-		"version": npmPackage.Version,
-	}).Info("Found package")
+	// attempt to authenticate
+	err = authenticate(p.Config)
 
-	// see if the package should be published
+	if err != nil {
+		return err
+	}
+
+	// read the package
+	npmPackage, err := readPackageFile(p.Config)
+
+	if err != nil {
+		return err
+	}
+
+	// determine whether to publish
 	publish, err := shouldPublishPackage(p.Config, npmPackage)
 
+	if err != nil {
+		return err
+	}
+
 	if publish {
-		log.Info("Attempting to publish package")
+		log.Info("Publishing package")
 
-		// write the npmrc file
-		err := writeNpmrcFile(p.Config)
-
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Problem creating npmrc file")
-
-			return err
-		}
-
-		var cmds []*exec.Cmd
-
-		// write the version command
-		cmds = append(cmds, versionCommand())
-
-		// write registry command
-		if p.Config.Registry != GlobalRegistry {
-			cmds = append(cmds, registryCommand(p.Config.Registry))
-		}
-
-		// write auth command
-		if p.Config.AlwaysAuth {
-			cmds = append(cmds, alwaysAuthCommand())
-		}
-
-		// write skip verify command
-		if p.Config.SkipVerify {
-			cmds = append(cmds, skipVerifyCommand())
-		}
-
-		// write the publish command
-		cmds = append(cmds, publishCommand())
-
-		// run the commands
-		err = runCommands(cmds)
-
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Package was not published")
-		}
-	} else {
-		log.WithFields(log.Fields{
-			"reason": err,
-		}).Info("Package will not be published")
+		// run the publish command
+		return runCommand(publishCommand(), p.Config.Folder)
 	}
 
 	return nil
 }
 
-/// Reads the package file at the given path
-func readPackageFile(path string) (*NpmPackage, error) {
+/// writeNpmrc creates a .npmrc in the folder for authentication
+func writeNpmrc(config Config) error {
+	var npmrcContents string
+
+	// check for an auth token
+	if len(config.Token) == 0 {
+		// check for a username
+		if len(config.Username) == 0 {
+			return errors.New("No username provided")
+		}
+
+		// check for an email
+		if len(config.Email) == 0 {
+			return errors.New("No email address provided")
+		}
+
+		// check for a password
+		if len(config.Password) == 0 {
+			log.Warning("No password provided")
+		}
+
+		log.WithFields(log.Fields{
+			"username": config.Username,
+			"email":    config.Email,
+		}).Info("Specified credentials")
+
+		npmrcContents = npmrcContentsUsernamePassword(config)
+	} else {
+		log.Info("Token credentials being used")
+
+		npmrcContents = npmrcContentsToken(config)
+	}
+
+	// write npmrc file
+	user, _ := user.Current()
+	npmrcPath := path.Join(user.HomeDir, ".npmrc")
+
+	log.WithFields(log.Fields{
+		"path": npmrcPath,
+	}).Info("Writing npmrc")
+
+	return ioutil.WriteFile(npmrcPath, []byte(npmrcContents), 0644)
+}
+
+/// authenticate atempts to authenticate with the NPM registry.
+func authenticate(config Config) error {
+	var cmds []*exec.Cmd
+
+	// write the version command
+	cmds = append(cmds, versionCommand())
+
+	// write registry command
+	if config.Registry != GlobalRegistry {
+		cmds = append(cmds, registryCommand(config.Registry))
+	}
+
+	// write auth command
+	cmds = append(cmds, alwaysAuthCommand())
+
+	// write skip verify command
+	if config.SkipVerify {
+		cmds = append(cmds, skipVerifyCommand())
+	}
+
+	// write whoami command to verify credentials
+	cmds = append(cmds, whoamiCommand())
+
+	// run commands
+	err := runCommands(cmds, config.Folder)
+
+	if err != nil {
+		return errors.New("Could not authenticate")
+	}
+
+	return nil
+}
+
+/// readPackageFile reads the package file at the given path.
+func readPackageFile(config Config) (*npmPackage, error) {
 	// read the file
-	file, err := ioutil.ReadFile(path)
+	packagePath := path.Join(config.Folder, "package.json")
+	file, err := ioutil.ReadFile(packagePath)
 
 	if err != nil {
 		return nil, err
 	}
 
 	// unmarshal the json data
-	npmPackage := NpmPackage{}
-	err = json.Unmarshal(file, &npmPackage)
+	npm := npmPackage{}
+	err = json.Unmarshal(file, &npm)
+
+	if len(npm.Config.Registry) == 0 {
+		log.Info("No registry specified in the package.json")
+		npm.Config.Registry = GlobalRegistry
+	}
 
 	if err != nil {
 		return nil, err
 	}
 
 	// make sure values are present
-	if len(npmPackage.Name) == 0 {
+	if len(npm.Name) == 0 {
 		return nil, errors.New("No package name present")
 	}
 
-	if len(npmPackage.Version) == 0 {
+	if len(npm.Version) == 0 {
 		return nil, errors.New("No package version present")
 	}
 
-	return &npmPackage, nil
-}
-
-/// Determines if the package should be published
-func shouldPublishPackage(config Config, npmPackage *NpmPackage) (bool, error) {
-	// get the url for the package
-	packageUrl := fmt.Sprintf("%s/%s/%s", config.Registry, npmPackage.Name, npmPackage.Version)
+	// check package registry
+	if strings.Compare(config.Registry, npm.Config.Registry) != 0 {
+		return nil, fmt.Errorf("Registry values do not match .drone.yml: %s package.json: %s", config.Registry, npm.Config.Registry)
+	}
 
 	log.WithFields(log.Fields{
-		"url": packageUrl,
-	}).Info("Requesting package information")
+		"name":    npm.Name,
+		"version": npm.Version,
+	}).Info("Found package.json")
 
-	// create a request for the package
-	req, err := http.NewRequest("GET", packageUrl, nil)
-
-	if err != nil {
-		return false, err
-	}
-
-	// set authentication if needed
-	// NPM uses basic http auth
-	if config.AlwaysAuth {
-		req.SetBasicAuth(config.Username, config.Password)
-	}
-
-	// skip verify if necessary
-	if config.SkipVerify {
-		http.DefaultTransport = &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-
-		log.Warning("Skipping SSL verification")
-	}
-
-	// get the response
-	resp, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		return false, err
-	}
-
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-
-	// look for a 404 to see if the package should be published
-	if statusCode == http.StatusNotFound {
-		return true, nil
-	} else if statusCode == http.StatusOK {
-		return false, errors.New("Package already published")
-	} else {
-		contents, err := ioutil.ReadAll(resp.Body)
-
-		if err != nil {
-			return false, err
-		}
-
-		return false, errors.New(fmt.Sprintf("Error Occurred. Status %d\nBody:%s", statusCode, contents))
-	}
+	return &npm, nil
 }
 
-/// Writes the npmrc file
-func writeNpmrcFile(config Config) error {
+/// shouldPublishPackage determines if the package should be published
+func shouldPublishPackage(config Config, npm *npmPackage) (bool, error) {
+	cmd := packageVersionsCommand(npm.Name)
+	cmd.Dir = config.Folder
+
+	trace(cmd)
+	out, err := cmd.CombinedOutput()
+
+	// see if there was an error
+	// if there is an error its likely due to the package never being published
+	if err == nil {
+		// parse the json output
+		var versions []string
+		err = json.Unmarshal(out, &versions)
+
+		if err != nil {
+			log.Debug("Could not parse into array of string. Likely single value")
+
+			var version string
+			err := json.Unmarshal(out, &version)
+
+			if err != nil {
+				return false, err
+			}
+
+			versions = append(versions, version)
+		}
+
+		for _, value := range versions {
+			log.WithFields(log.Fields{
+				"version": value,
+			}).Debug("Found version of package")
+
+			if strings.Compare(npm.Version, value) == 0 {
+				return false, nil
+			}
+		}
+
+		log.Info("Version not found in the registry")
+	} else {
+		log.Info("Name was not found in the registry")
+	}
+
+	return true, nil
+}
+
+// npmrcContentsUsernamePassword creates the contents from a username and
+// password
+func npmrcContentsUsernamePassword(config Config) string {
 	// get the base64 encoded string
 	authString := fmt.Sprintf("%s:%s", config.Username, config.Password)
 	encoded := base64.StdEncoding.EncodeToString([]byte(authString))
 
 	// create the file contents
-	contents := fmt.Sprintf("_auth = %s\nemail = %s", encoded, config.Email)
-
-	// write the file
-	return ioutil.WriteFile("/root/.npmrc", []byte(contents), 0644)
+	return fmt.Sprintf("_auth = %s\nemail = %s", encoded, config.Email)
 }
 
-// Gets the npm version
+/// Writes npmrc contents when using a token
+func npmrcContentsToken(config Config) string {
+	registry, _ := url.Parse(config.Registry)
+	return fmt.Sprintf("//%s/:_authToken=%s", registry.Host, config.Token)
+}
+
+// versionCommand gets the npm version
 func versionCommand() *exec.Cmd {
 	return exec.Command("npm", "--version")
 }
 
-// Sets the npm registry
+// registryCommand sets the NPM registry.
 func registryCommand(registry string) *exec.Cmd {
 	return exec.Command("npm", "config", "set", "registry", registry)
 }
 
-// Sets the always off flag
+// alwaysAuthCommand forces authentication.
 func alwaysAuthCommand() *exec.Cmd {
 	return exec.Command("npm", "config", "set", "always-auth", "true")
 }
 
-// Skip ssl verification
+// skipVerifyCommand disables ssl verification.
 func skipVerifyCommand() *exec.Cmd {
 	return exec.Command("npm", "config", "set", "strict-ssl", "false")
 }
 
-// Publishes the package
+// whoamiCommand creates a command that gets the currently logged in user.
+func whoamiCommand() *exec.Cmd {
+	return exec.Command("npm", "whoami")
+}
+
+// packageVersionsCommand gets the versions of the npm package.
+func packageVersionsCommand(name string) *exec.Cmd {
+	return exec.Command("npm", "view", name, "versions", "--json")
+}
+
+// publishCommand runs the publish command
 func publishCommand() *exec.Cmd {
 	return exec.Command("npm", "publish")
 }
 
-// Trace writes each command to standard error (preceded by a ‘$ ’) before it
+// trace writes each command to standard error (preceded by a ‘$ ’) before it
 // is executed. Used for debugging your build.
 func trace(cmd *exec.Cmd) {
 	fmt.Fprintf(os.Stdout, "+ %s\n", strings.Join(cmd.Args, " "))
 }
 
-func runCommands(cmds []*exec.Cmd) error {
+// runCommands executes the list of cmds in the given directory.
+func runCommands(cmds []*exec.Cmd, dir string) error {
 	for _, cmd := range cmds {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		trace(cmd)
+		err := runCommand(cmd, dir)
 
-		err := cmd.Run()
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func runCommand(cmd *exec.Cmd, dir string) error {
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Dir = dir
+	trace(cmd)
+
+	return cmd.Run()
 }

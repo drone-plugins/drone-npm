@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -31,6 +31,11 @@ func main() {
 			Name:   "email",
 			Usage:  "NPM email",
 			EnvVar: "PLUGIN_EMAIL,NPM_EMAIL",
+		},
+		cli.StringFlag{
+			Name:   "token",
+			Usage:  "NPM deploy token",
+			EnvVar: "PLUGIN_TOKEN,NPM_TOKEN",
 		},
 		cli.StringFlag{
 			Name:   "registry",
@@ -63,6 +68,7 @@ func run(c *cli.Context) error {
 		Config: Config{
 			Username:   c.String("username"),
 			Password:   c.String("password"),
+			Token:      c.String("token"),
 			Email:      c.String("email"),
 			Registry:   c.String("registry"),
 			Folder:     c.String("folder"),
@@ -72,7 +78,7 @@ func run(c *cli.Context) error {
 	}
 
 	if err := plugin.Exec(); err != nil {
-		fmt.Println(err)
+		log.Error(err)
 		os.Exit(1)
 	}
 
