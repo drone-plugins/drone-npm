@@ -1,18 +1,35 @@
+workspace:
+  base: /go
+  path: src/github.com/drone-plugins/drone-npm
+
 pipeline:
   test:
     image: golang:1.6
     environment:
       - CGO_ENABLED=0
-      - GO15VENDOREXPERIMENT=1
-      - GOPATH=/drone
     commands:
+      - go vet
+      - go test -cover -coverprofile=coverage.out
       - go build -ldflags "-s -w -X main.build=$DRONE_BUILD_NUMBER"
-  docker:
-    storage_driver: vfs
-    repo: plugins/npm
-    tag: [ "latest", "1.0", "1" ]
+  coverage:
     when:
       branch: master
+      event: push
+  latest:
+    image: docker
+    storage_driver: overlay
+    repo: plugins/npm
+    tags: [ "latest", "1.0", "1" ]
+    when:
+      branch: master
+      event: push
+  develop:
+    image: docker
+    storage_driver: overlay
+    repo: plugins/npm
+    tags: [ "develop" ]
+    when:
+      branch: develop
       event: push
 
 plugin:
