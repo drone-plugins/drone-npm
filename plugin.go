@@ -121,8 +121,12 @@ func writeNpmrc(config Config) error {
 	}
 
 	// write npmrc file
-	user, _ := user.Current()
-	npmrcPath := path.Join(user.HomeDir, ".npmrc")
+	home := "/root"
+	user, err := user.Current()
+	if err == nil {
+		home = user.HomeDir
+	}
+	npmrcPath := path.Join(home, ".npmrc")
 
 	log.WithFields(log.Fields{
 		"path": npmrcPath,
