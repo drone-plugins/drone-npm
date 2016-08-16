@@ -23,7 +23,7 @@ plugin:
   name: NPM
   desc: Publish files and artifacts to a NPM registry
   type: publish
-  image: plugins/drone-node
+  image: plugins/npm
   labels:
     - publish
     - node
