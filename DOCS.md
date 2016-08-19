@@ -24,10 +24,10 @@ It is highly recommended to put the **NPM_PASSWORD** or **NPM_TOKEN** into
 secrets so it is not exposed to users. This can be done using the drone-cli.
 
 ```bash
-drone secret add --image=npm \
+drone secret add --image=plugins/npm \
     octocat/hello-world NPM_PASSWORD pa55word
 
-drone secret add --image=npm \
+drone secret add --image=plugins/npm \
     octocat/hello-world NPM_TOKEN pa55word
 ```
 
@@ -56,6 +56,7 @@ Global NPM with **NPM_PASSWORD** as a secret:
 ```yaml
 pipeline:
   npm:
+    image: plugins/npm
     username: bob
     email: bob@bob.me
 ```
@@ -66,6 +67,7 @@ with **NPM_PASSWORD** as a secret:
 ```yaml
 pipeline:
   npm:
+    image: plugins/npm
     username: drone
     email: drone@drone.io
     registry: "http://myregistry:4873"
@@ -77,5 +79,6 @@ as a secret:
 ```yaml
 pipeline:
   npm:
+    image: plugins/npm
     registry: "http://myregistry:8081"
 ```
