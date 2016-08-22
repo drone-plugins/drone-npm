@@ -3,16 +3,16 @@ package main
 import (
 	"os"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli"
-	_ "github.com/joho/godotenv/autoload"
 )
 
 var version string // build number set at compile-time
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "npm"
+	app.Name = "npm plugin"
 	app.Usage = "npm plugin"
 	app.Action = run
 	app.Version = version
@@ -53,12 +53,22 @@ func main() {
 			Usage:  "skip SSL verification",
 			EnvVar: "PLUGIN_SKIP_VERIFY",
 		},
+		cli.StringFlag{
+			Name:  "env-file",
+			Usage: "source env file",
+		},
 	}
 
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		logrus.Fatal(err)
+	}
 }
 
 func run(c *cli.Context) error {
+	if c.String("env-file") != "" {
+		_ = godotenv.Load(c.String("env-file"))
+	}
+
 	plugin := Plugin{
 		Config: Config{
 			Username:   c.String("username"),
@@ -71,10 +81,5 @@ func run(c *cli.Context) error {
 		},
 	}
 
-	if err := plugin.Exec(); err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
-
-	return nil
+	return plugin.Exec()
 }
