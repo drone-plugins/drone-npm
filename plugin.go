@@ -27,6 +27,7 @@ type (
 		Folder     string
 		SkipVerify bool
 		Tag        string
+		Access     string
 	}
 
 	npmPackage struct {
@@ -309,11 +310,17 @@ func packageVersionsCommand(name string) *exec.Cmd {
 
 // publishCommand runs the publish command
 func publishCommand(config Config) *exec.Cmd {
-	if len(config.Tag) == 0 {
-		return exec.Command("npm", "publish");
-	} else {
-		return exec.Command("npm", "publish", "--tag", config.Tag);
+	commandArgs := []string{"publish"};
+
+	if len(config.Tag) != 0 {
+		commandArgs = append(commandArgs, "--tag", config.Tag);
 	}
+
+	if len(config.Access) != 0 {
+		commandArgs = append(commandArgs, "--access", config.Access);
+	}
+
+	return exec.Command("npm", commandArgs...);
 }
 
 // trace writes each command to standard error (preceded by a ‘$ ’) before it
