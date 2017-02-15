@@ -26,6 +26,8 @@ type (
 		Registry   string
 		Folder     string
 		SkipVerify bool
+		Tag        string
+		Access     string
 	}
 
 	npmPackage struct {
@@ -81,7 +83,7 @@ func (p Plugin) Exec() error {
 		log.Info("Publishing package")
 
 		// run the publish command
-		return runCommand(publishCommand(), p.Config.Folder)
+		return runCommand(publishCommand(p.Config), p.Config.Folder)
 	}
 
 	return nil
@@ -307,8 +309,18 @@ func packageVersionsCommand(name string) *exec.Cmd {
 }
 
 // publishCommand runs the publish command
-func publishCommand() *exec.Cmd {
-	return exec.Command("npm", "publish")
+func publishCommand(config Config) *exec.Cmd {
+	commandArgs := []string{"publish"};
+
+	if len(config.Tag) != 0 {
+		commandArgs = append(commandArgs, "--tag", config.Tag);
+	}
+
+	if len(config.Access) != 0 {
+		commandArgs = append(commandArgs, "--access", config.Access);
+	}
+
+	return exec.Command("npm", commandArgs...);
 }
 
 // trace writes each command to standard error (preceded by a ‘$ ’) before it

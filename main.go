@@ -58,6 +58,16 @@ func main() {
 			Name:  "env-file",
 			Usage: "source env file",
 		},
+		cli.StringFlag{
+			Name:   "tag",
+			Usage:  "NPM publish tag",
+			EnvVar: "PLUGIN_TAG",
+		},
+		cli.StringFlag{
+			Name:   "access",
+			Usage:  "NPM scoped package access",
+			EnvVar: "PLUGIN_ACCESS",
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -79,6 +89,8 @@ func run(c *cli.Context) error {
 			Registry:   c.String("registry"),
 			Folder:     c.String("folder"),
 			SkipVerify: c.Bool("skip_verify"),
+			Tag:        c.String("tag"),
+			Access:     c.String("access"),
 		},
 	}
 

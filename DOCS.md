@@ -11,6 +11,10 @@ The following parameters are used to configure the plugin:
 * **registry** - the registry URL to use (https://registry.npmjs.org by default)
 * **folder** - the folder, relative to the workspace, containing the library
   (uses the workspace directory, by default)
+* **tag** - the tag to use when publishing the package (does not set
+  one by default)
+* **access* - the access level to use for scoped packages (does not set
+  one by default)
 
 The following secret values can be set to configure the plugin.
 
