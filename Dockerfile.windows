@@ -1,8 +1,6 @@
 FROM microsoft/nanoserver:latest
 MAINTAINER Drone.IO Community <drone-dev@googlegroups.com>
 
-ENV GODEBUG=netdns=go
-
 # TODO: install nodejs and git
 
 LABEL org.label-schema.version=latest

@@ -1,8 +1,6 @@
 FROM plugins/base:arm64
 MAINTAINER Drone.IO Community <drone-dev@googlegroups.com>
 
-ENV GODEBUG=netdns=go
-
 RUN apk add -U --no-cache git nodejs
 
 LABEL org.label-schema.version=latest
