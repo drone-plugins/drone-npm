@@ -1,7 +1,7 @@
 FROM plugins/base:amd64
 MAINTAINER Drone.IO Community <drone-dev@googlegroups.com>
 
-RUN apk add -U --no-cache git nodejs
+RUN apk add -U --no-cache git nodejs nodejs-npm
 
 LABEL org.label-schema.version=latest
 LABEL org.label-schema.vcs-url="https://github.com/drone-plugins/drone-npm.git"
