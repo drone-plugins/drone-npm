@@ -3,16 +3,16 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "vwpCebe1/Uw4IVvhoCEzrsBoA+E=",
+			"checksumSHA1": "nmK98OivIIMYtC4ANd9qCvNEdPY=",
 			"path": "github.com/Sirupsen/logrus",
-			"revision": "418b41d23a1bf978c06faea5313ba194650ac088",
-			"revisionTime": "2015-09-08T20:46:18Z"
+			"revision": "c155da19408a8799da419ed3eeb0cb5db0ad5dbc",
+			"revisionTime": "2018-03-11T22:51:37Z"
 		},
 		{
-			"checksumSHA1": "ljZrmD7pmMXAkGNfp6IEzj31fY8=",
+			"checksumSHA1": "Upm2HylYMVgYGQhytkkuaEdKuwM=",
 			"path": "github.com/joho/godotenv",
-			"revision": "4ed13390c0acd2ff4e371e64d8b97c8954138243",
-			"revisionTime": "2015-09-07T01:02:28Z"
+			"revision": "6bb08516677f8c8274c557fc801bee9ab564ab2c",
+			"revisionTime": "2018-01-15T02:49:21Z"
 		},
 		{
 			"checksumSHA1": "UE4lhbPYYWEhqHXQk24OA73m5+8=",
@@ -21,10 +21,28 @@
 			"revisionTime": "2015-09-07T01:02:28Z"
 		},
 		{
-			"checksumSHA1": "W1G9Avuz92Ng1IqblcO/cIe6pHU=",
+			"checksumSHA1": "l8BBWZlYp/n2FAMBvIN53o+uRNw=",
 			"path": "github.com/urfave/cli",
-			"revision": "d9021faab69f92295ef7061bd39e4a76dcbdef32",
-			"revisionTime": "2016-07-26T01:14:03Z"
+			"revision": "8e01ec4cd3e2d84ab2fe90d8210528ffbb06d8ff",
+			"revisionTime": "2018-02-26T03:02:53Z"
+		},
+		{
+			"checksumSHA1": "BGm8lKZmvJbf/YOJLeL1rw2WVjA=",
+			"path": "golang.org/x/crypto/ssh/terminal",
+			"revision": "182114d582623c1caa54f73de9c7224e23a48487",
+			"revisionTime": "2018-03-12T18:51:34Z"
+		},
+		{
+			"checksumSHA1": "uYaLcsHMfUaXC4TMYvpLloLVCms=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "c28acc882ebcbfbe8ce9f0f14b9ac26ee138dd51",
+			"revisionTime": "2018-03-11T13:24:03Z"
+		},
+		{
+			"checksumSHA1": "eQq+ZoTWPjyizS9XalhZwfGjQao=",
+			"path": "golang.org/x/sys/windows",
+			"revision": "c28acc882ebcbfbe8ce9f0f14b9ac26ee138dd51",
+			"revisionTime": "2018-03-11T13:24:03Z"
 		}
 	],
 	"rootPath": "github.com/drone-plugins/drone-npm"
