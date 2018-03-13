@@ -3,15 +3,22 @@ workspace:
   path: src/github.com/drone-plugins/drone-npm
 
 pipeline:
+  dependencies:
+    image: golang:1.10
+    pull: true
+    commands:
+      - go get -u github.com/golang/dep/cmd/dep
+      - dep ensure
+
   test:
-    image: golang:1.9
+    image: golang:1.10
     pull: true
     commands:
       - go vet
       - go test -cover -coverprofile=coverage.out
 
   build_linux_amd64:
-    image: golang:1.9
+    image: golang:1.10
     pull: true
     group: build
     environment:
@@ -22,7 +29,7 @@ pipeline:
       - go build -v -ldflags "-X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/amd64/drone-npm
 
   # build_linux_arm64:
-  #   image: golang:1.9
+  #   image: golang:1.10
   #   pull: true
   #   group: build
   #   environment:
@@ -33,7 +40,7 @@ pipeline:
   #     - go build -v -ldflags "-X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm64/drone-npm
 
   # build_linux_arm:
-  #   image: golang:1.9
+  #   image: golang:1.10
   #   pull: true
   #   group: build
   #   environment:
@@ -45,7 +52,7 @@ pipeline:
   #     - go build -v -ldflags "-X main.build=${DRONE_BUILD_NUMBER}" -a -o release/linux/arm/drone-npm
 
   # build_windows_amd64:
-  #   image: golang:1.9-nanoserver
+  #   image: golang:1.10-nanoserver
   #   pull: true
   #   group: build
   #   environment:
