@@ -1,13 +1,11 @@
 FROM plugins/base:arm
-MAINTAINER Drone.IO Community <drone-dev@googlegroups.com>
 
-RUN apk add -U --no-cache git nodejs nodejs-npm
+LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
+  org.label-schema.name="Drone NPM" \
+  org.label-schema.vendor="Drone.IO Community" \
+  org.label-schema.schema-version="1.0"
 
-LABEL org.label-schema.version=latest
-LABEL org.label-schema.vcs-url="https://github.com/drone-plugins/drone-npm.git"
-LABEL org.label-schema.name="Drone NPM"
-LABEL org.label-schema.vendor="Drone.IO Community"
-LABEL org.label-schema.schema-version="1.0"
+RUN apk add --no-cache git nodejs nodejs-npm
 
 ADD release/linux/arm/drone-npm /bin/
 ENTRYPOINT [ "/bin/drone-npm" ]
