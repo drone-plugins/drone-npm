@@ -84,6 +84,8 @@ func (p Plugin) Exec() error {
 
 		// run the publish command
 		return runCommand(publishCommand(p.Config), p.Config.Folder)
+	} else {
+		log.Info("Not publishing package")
 	}
 
 	return nil
@@ -249,6 +251,7 @@ func shouldPublishPackage(config Config, npm *npmPackage) (bool, error) {
 			}).Debug("Found version of package")
 
 			if strings.Compare(npm.Version, value) == 0 {
+				log.Info("Version found in the registry")
 				return false, nil
 			}
 		}
@@ -310,17 +313,17 @@ func packageVersionsCommand(name string) *exec.Cmd {
 
 // publishCommand runs the publish command
 func publishCommand(config Config) *exec.Cmd {
-	commandArgs := []string{"publish"};
+	commandArgs := []string{"publish"}
 
 	if len(config.Tag) != 0 {
-		commandArgs = append(commandArgs, "--tag", config.Tag);
+		commandArgs = append(commandArgs, "--tag", config.Tag)
 	}
 
 	if len(config.Access) != 0 {
-		commandArgs = append(commandArgs, "--access", config.Access);
+		commandArgs = append(commandArgs, "--access", config.Access)
 	}
 
-	return exec.Command("npm", commandArgs...);
+	return exec.Command("npm", commandArgs...)
 }
 
 // trace writes each command to standard error (preceded by a ‘$ ’) before it
