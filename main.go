@@ -47,12 +47,12 @@ func main() {
 		cli.StringFlag{
 			Name:   "folder",
 			Usage:  "folder containing package.json",
-			EnvVar: "PLUGIN_FOLDER",
+			EnvVar: "PLUGIN_FOLDER,NPM_FOLDER",
 		},
 		cli.BoolFlag{
 			Name:   "skip_verify",
 			Usage:  "skip SSL verification",
-			EnvVar: "PLUGIN_SKIP_VERIFY",
+			EnvVar: "PLUGIN_SKIP_VERIFY,NPM_SKIP_VERIFY",
 		},
 		cli.StringFlag{
 			Name:  "env-file",
@@ -61,12 +61,12 @@ func main() {
 		cli.StringFlag{
 			Name:   "tag",
 			Usage:  "NPM publish tag",
-			EnvVar: "PLUGIN_TAG",
+			EnvVar: "PLUGIN_TAG,NPM_TAG",
 		},
 		cli.StringFlag{
 			Name:   "access",
 			Usage:  "NPM scoped package access",
-			EnvVar: "PLUGIN_ACCESS",
+			EnvVar: "PLUGIN_ACCESS,NPM_ACCESS",
 		},
 	}
 
