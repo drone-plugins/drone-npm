@@ -4,14 +4,14 @@
 [[projects]]
   name = "github.com/Sirupsen/logrus"
   packages = ["."]
-  revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
-  version = "v1.0.5"
+  revision = "3e01752db0189b9157070a0e1668a620f9a85da2"
+  version = "v1.0.6"
 
 [[projects]]
   name = "github.com/joho/godotenv"
   packages = ["."]
-  revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
-  version = "v1.2.0"
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
 
 [[projects]]
   name = "github.com/urfave/cli"
@@ -23,7 +23,7 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "b4956d363a8b14623cc81db401707679605930a3"
+  revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
 
 [[projects]]
   branch = "master"
@@ -32,7 +32,7 @@
     "unix",
     "windows"
   ]
-  revision = "cc7307a45468e49eaf2997c890f14aa03a26917b"
+  revision = "d47a0f3392421c5624713c9a19fe781f651f8a50"
 
 [solve-meta]
   analyzer-name = "dep"
