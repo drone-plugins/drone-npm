@@ -19,16 +19,16 @@ import (
 type (
 	// Config for the plugin.
 	Config struct {
-		Username       string
-		Password       string
-		Token          string
-		Email          string
-		Registry       string
-		Folder         string
-		SkipVerify     bool
-		FailIfConflict bool
-		Tag            string
-		Access         string
+		Username              string
+		Password              string
+		Token                 string
+		Email                 string
+		Registry              string
+		Folder                string
+		SkipVerify            bool
+		FailOnVersionConflict bool
+		Tag                   string
+		Access                string
 	}
 
 	npmPackage struct {
@@ -253,7 +253,7 @@ func shouldPublishPackage(config Config, npm *npmPackage) (bool, error) {
 
 			if strings.Compare(npm.Version, value) == 0 {
 				log.Info("Version found in the registry")
-				if config.FailIfConflict {
+				if config.FailOnVersionConflict {
 					return false, errors.New("Cannot publish package due to version conflict")
 				}
 				return false, nil
