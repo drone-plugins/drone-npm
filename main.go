@@ -54,6 +54,11 @@ func main() {
 			Usage:  "skip SSL verification",
 			EnvVar: "PLUGIN_SKIP_VERIFY",
 		},
+		cli.BoolFlag{
+			Name:   "fail_on_version_conflict",
+			Usage:  "fail NPM publish if version already exists in NPM registry",
+			EnvVar: "PLUGIN_FAIL_ON_VERSION_CONFLICT",
+		},
 		cli.StringFlag{
 			Name:  "env-file",
 			Usage: "source env file",
@@ -82,15 +87,16 @@ func run(c *cli.Context) error {
 
 	plugin := Plugin{
 		Config: Config{
-			Username:   c.String("username"),
-			Password:   c.String("password"),
-			Token:      c.String("token"),
-			Email:      c.String("email"),
-			Registry:   c.String("registry"),
-			Folder:     c.String("folder"),
-			SkipVerify: c.Bool("skip_verify"),
-			Tag:        c.String("tag"),
-			Access:     c.String("access"),
+			Username:              c.String("username"),
+			Password:              c.String("password"),
+			Token:                 c.String("token"),
+			Email:                 c.String("email"),
+			Registry:              c.String("registry"),
+			Folder:                c.String("folder"),
+			SkipVerify:            c.Bool("skip_verify"),
+			FailOnVersionConflict: c.Bool("fail_on_version_conflict"),
+			Tag:                   c.String("tag"),
+			Access:                c.String("access"),
 		},
 	}
 
