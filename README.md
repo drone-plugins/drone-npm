@@ -7,7 +7,6 @@
 [![](https://images.microbadger.com/badges/image/plugins/npm.svg)](https://microbadger.com/images/plugins/npm "Get your own image badge on microbadger.com")
 [![Go Doc](https://godoc.org/github.com/drone-plugins/drone-npm?status.svg)](http://godoc.org/github.com/drone-plugins/drone-npm)
 [![Go Report](https://goreportcard.com/badge/github.com/drone-plugins/drone-npm)](https://goreportcard.com/report/github.com/drone-plugins/drone-npm)
-[![](https://images.microbadger.com/badges/image/plugins/npm.svg)](https://microbadger.com/images/plugins/npm "Get your own image badge on microbadger.com")
 
 Drone plugin to publish files and artifacts to a private or public NPM registry. For the usage information and a listing of the available options please take a look at [the docs](http://plugins.drone.io/drone-plugins/drone-npm/).
 
