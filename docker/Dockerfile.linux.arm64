@@ -1,4 +1,4 @@
-FROM plugins/base:arm64
+FROM plugins/base:linux-arm64
 
 LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
   org.label-schema.name="Drone NPM" \

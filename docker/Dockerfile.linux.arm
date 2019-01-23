@@ -1,4 +1,4 @@
-FROM plugins/base:amd64
+FROM plugins/base:linux-arm
 
 LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
   org.label-schema.name="Drone NPM" \
@@ -7,5 +7,5 @@ LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
 
 RUN apk add --no-cache git nodejs nodejs-npm
 
-ADD release/linux/amd64/drone-npm /bin/
-ENTRYPOINT ["/bin/drone-npm"]
+ADD release/linux/arm/drone-npm /bin/
+ENTRYPOINT [ "/bin/drone-npm" ]
