@@ -12,44 +12,35 @@ Drone plugin to publish files and artifacts to a private or public NPM registry.
 
 ## Build
 
-Build the binary with the following commands:
+Build the binary with the following command:
 
-```
-go build
+```console
+export GOOS=linux
+export GOARCH=amd64
+export CGO_ENABLED=0
+export GO111MODULE=on
+
+go build -v -a -tags netgo -o release/linux/amd64/drone-npm
 ```
 
 ## Docker
 
-Build the Docker image with the following commands:
+Build the Docker image with the following command:
 
-```
-GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -tags netgo -o release/linux/amd64/drone-npm
-docker build --rm -t plugins/npm .
+```console
+docker build \
+  --label org.label-schema.build-date=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+  --label org.label-schema.vcs-ref=$(git rev-parse --short HEAD) \
+  --file docker/Dockerfile.linux.amd64 --tag plugins/npm .
 ```
 
 ## Usage
 
-Push to public NPM registry:
-
-```sh
+```console
 docker run --rm \
   -e NPM_USERNAME=drone \
   -e NPM_PASSWORD=password \
   -e NPM_EMAIL=drone@drone.io \
-  -v $(pwd):$(pwd) \
-  -w $(pwd) \
-  plugins/npm
-```
-
-Push to private NPM registry:
-
-```sh
-docker run --rm \
-  -e NPM_USERNAME=drone \
-  -e NPM_PASSWORD=password \
-  -e NPM_EMAIL=drone@drone.io \
-  -e NPM_REGISTRY=http://myregistry.com \
-  -e NPM_ALWAYS_AUTH=true \
   -v $(pwd):$(pwd) \
   -w $(pwd) \
   plugins/npm
