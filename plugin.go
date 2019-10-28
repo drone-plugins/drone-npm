@@ -282,7 +282,8 @@ func npmrcContentsUsernamePassword(config Config) string {
 /// Writes npmrc contents when using a token
 func npmrcContentsToken(config Config) string {
 	registry, _ := url.Parse(config.Registry)
-	return fmt.Sprintf("//%s/:_authToken=%s", registry.Host, config.Token)
+	registry.Scheme = "" // Reset the scheme to empty. This makes it so we will get a protocol relative URL.
+	return fmt.Sprintf("%s:_authToken=%s", registry.String(), config.Token)
 }
 
 // versionCommand gets the npm version
