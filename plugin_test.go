@@ -21,4 +21,11 @@ func TestTokenRCContents(t *testing.T) {
 	if actual != expected {
 		t.Errorf("Unexpected token config (Got: %s, Expected: %s)", actual, expected)
 	}
+
+	conf.Registry = GlobalRegistry
+	actual = npmrcContentsToken(conf)
+	expected = "//registry.npmjs.org/:_authToken=token"
+	if actual != expected {
+		t.Errorf("Unexpected token config (Got: %s, Expected: %s)", actual, expected)
+	}
 }

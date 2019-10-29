@@ -48,7 +48,7 @@ type (
 )
 
 // GlobalRegistry defines the default NPM registry.
-const GlobalRegistry = "https://registry.npmjs.org"
+const GlobalRegistry = "https://registry.npmjs.org/"
 
 // Exec executes the plugin.
 func (p Plugin) Exec() error {
