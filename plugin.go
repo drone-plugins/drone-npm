@@ -48,7 +48,7 @@ type (
 )
 
 // GlobalRegistry defines the default NPM registry.
-const GlobalRegistry = "https://registry.npmjs.org"
+const GlobalRegistry = "https://registry.npmjs.org/"
 
 // Exec executes the plugin.
 func (p Plugin) Exec() error {
@@ -283,7 +283,12 @@ func npmrcContentsUsernamePassword(config Config) string {
 func npmrcContentsToken(config Config) string {
 	registry, _ := url.Parse(config.Registry)
 	registry.Scheme = "" // Reset the scheme to empty. This makes it so we will get a protocol relative URL.
-	return fmt.Sprintf("%s:_authToken=%s", registry.String(), config.Token)
+	registryString := registry.String()
+
+	if !strings.HasSuffix(registryString, "/") {
+		registryString = registryString + "/"
+	}
+	return fmt.Sprintf("%s:_authToken=%s", registryString, config.Token)
 }
 
 // versionCommand gets the npm version
