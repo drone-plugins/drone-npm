@@ -285,7 +285,7 @@ func npmrcContentsToken(config Config) string {
 	registry.Scheme = "" // Reset the scheme to empty. This makes it so we will get a protocol relative URL.
 	registryString := registry.String()
 
-	if registryString[len(registryString)-1] != '/' {
+	if !strings.HasSuffix(registryString, "/") {
 		registryString = registryString + "/"
 	}
 	return fmt.Sprintf("%s:_authToken=%s", registryString, config.Token)
