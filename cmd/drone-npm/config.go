@@ -12,7 +12,15 @@ import (
 )
 
 const (
-	// Add all the flag names here as const strings.
+	usernameFlag              = "username"
+	passwordFlag              = "password"
+	emailFlag                 = "email"
+	tokenFlag                 = "token"
+	registryFlag              = "registry"
+	folderFlag                = "folder"
+	failOnVersionConflictFlag = "fail-on-version-conflict"
+	tagFlag                   = "tag"
+	accessFlag                = "access"
 )
 
 // settingsFlags has the cli.Flags for the plugin.Settings.
@@ -21,53 +29,48 @@ func settingsFlags() []cli.Flag {
 	// settings.
 	return []cli.Flag{
 		&cli.StringFlag{
-			Name:   "username",
-			Usage:  "NPM username",
-			EnvVars: []string{"PLUGIN_USERNAME","NPM_USERNAME"},
+			Name:    usernameFlag,
+			Usage:   "NPM username",
+			EnvVars: []string{"PLUGIN_USERNAME", "NPM_USERNAME"},
 		},
 		&cli.StringFlag{
-			Name:   "password",
-			Usage:  "NPM password",
-			EnvVars: []string{"PLUGIN_PASSWORD","NPM_PASSWORD"},
+			Name:    passwordFlag,
+			Usage:   "NPM password",
+			EnvVars: []string{"PLUGIN_PASSWORD", "NPM_PASSWORD"},
 		},
 		&cli.StringFlag{
-			Name:   "email",
-			Usage:  "NPM email",
-			EnvVars: []string{"PLUGIN_EMAIL","NPM_EMAIL"},
+			Name:    emailFlag,
+			Usage:   "NPM email",
+			EnvVars: []string{"PLUGIN_EMAIL", "NPM_EMAIL"},
 		},
 		&cli.StringFlag{
-			Name:   "token",
-			Usage:  "NPM deploy token",
-			EnvVars: []string{"PLUGIN_TOKEN","NPM_TOKEN"},
+			Name:    tokenFlag,
+			Usage:   "NPM deploy token",
+			EnvVars: []string{"PLUGIN_TOKEN", "NPM_TOKEN"},
 		},
 		&cli.StringFlag{
-			Name:   "registry",
-			Usage:  "NPM registry",
-			EnvVars: []string{"PLUGIN_REGISTRY","NPM_REGISTRY"},
+			Name:    registryFlag,
+			Usage:   "NPM registry",
+			EnvVars: []string{"PLUGIN_REGISTRY", "NPM_REGISTRY"},
 		},
 		&cli.StringFlag{
-			Name:   "folder",
-			Usage:  "folder containing package.json",
+			Name:    folderFlag,
+			Usage:   "folder containing package.json",
 			EnvVars: []string{"PLUGIN_FOLDER"},
 		},
 		&cli.BoolFlag{
-			Name:   "skip_verify",
-			Usage:  "skip SSL verification",
-			EnvVars: []string{"PLUGIN_SKIP_VERIFY"},
-		},
-		&cli.BoolFlag{
-			Name:   "fail_on_version_conflict",
-			Usage:  "fail NPM publish if version already exists in NPM registry",
+			Name:    failOnVersionConflictFlag,
+			Usage:   "fail NPM publish if version already exists in NPM registry",
 			EnvVars: []string{"PLUGIN_FAIL_ON_VERSION_CONFLICT"},
 		},
 		&cli.StringFlag{
-			Name:   "tag",
-			Usage:  "NPM publish tag",
+			Name:    tagFlag,
+			Usage:   "NPM publish tag",
 			EnvVars: []string{"PLUGIN_TAG"},
 		},
 		&cli.StringFlag{
-			Name:   "access",
-			Usage:  "NPM scoped package access",
+			Name:    accessFlag,
+			Usage:   "NPM scoped package access",
 			EnvVars: []string{"PLUGIN_ACCESS"},
 		},
 	}
@@ -77,15 +80,14 @@ func settingsFlags() []cli.Flag {
 func settingsFromContext(ctx *cli.Context) npm.Settings {
 	// Replace below with the parsing of the
 	return npm.Settings{
-		Username:              ctx.String("username"),
-		Password:              ctx.String("password"),
-		Token:                 ctx.String("token"),
-		Email:                 ctx.String("email"),
-		Registry:              ctx.String("registry"),
-		Folder:                ctx.String("folder"),
-		SkipVerify:            ctx.Bool("skip_verify"),
-		FailOnVersionConflict: ctx.Bool("fail_on_version_conflict"),
-		Tag:                   ctx.String("tag"),
-		Access:                ctx.String("access"),
+		Username:              ctx.String(usernameFlag),
+		Password:              ctx.String(passwordFlag),
+		Token:                 ctx.String(tokenFlag),
+		Email:                 ctx.String(emailFlag),
+		Registry:              ctx.String(registryFlag),
+		Folder:                ctx.String(folderFlag),
+		FailOnVersionConflict: ctx.Bool(failOnVersionConflictFlag),
+		Tag:                   ctx.String(tagFlag),
+		Access:                ctx.String(accessFlag),
 	}
 }
