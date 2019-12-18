@@ -5,6 +5,11 @@
 
 package npm
 
+import (
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+)
+
 // Settings for the Plugin.
 type Settings struct {
 	Username              string
@@ -20,7 +25,26 @@ type Settings struct {
 }
 
 func (p *pluginImpl) Validate() error {
-	// Validate the Config and return an error if there are issues.
+	// Check authentication options
+	if len(p.settings.Token) == 0 {
+        if len(p.settings.Username) == 0 {
+			return errors.New("No username provided")
+		}
+		if len(p.settings.Email) == 0 {
+			return errors.New("No email address provided")
+		}
+		if len(p.settings.Password) == 0 {
+			return errors.New("No password provided")
+		}
+
+		logrus.WithFields(logrus.Fields{
+			"username": p.settings.Username,
+			"email":    p.settings.Email,
+		}).Info("Specified credentials")
+	} else {
+		logrus.Info("Token credentials being used")
+	}
+
 	return nil
 }
 
