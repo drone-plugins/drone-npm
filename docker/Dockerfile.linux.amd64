@@ -8,4 +8,4 @@ LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" \
 RUN apk add --no-cache git nodejs nodejs-npm
 
 ADD release/linux/amd64/drone-npm /bin/
-ENTRYPOINT ["/bin/drone-npm"]
+ENTRYPOINT [ "/bin/drone-npm" ]

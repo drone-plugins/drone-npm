@@ -1,5 +1,5 @@
 # escape=`
-FROM plugins/base:windows-1803
+FROM plugins/base:windows-1903-amd64
 
 LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" `
   org.label-schema.name="Drone NPM" `
@@ -8,5 +8,5 @@ LABEL maintainer="Drone.IO Community <drone-dev@googlegroups.com>" `
 
 # TODO: install required tools
 
-ADD release\drone-npm.exe c:\drone-npm.exe
-ENTRYPOINT [ "c:\\drone-npm.exe" ]
+ADD release/windows/amd64/drone-npm.exe C:/bin/drone-npm.exe
+ENTRYPOINT [ "C:\\bin\\drone-npm.exe" ]

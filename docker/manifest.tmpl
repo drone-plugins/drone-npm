@@ -23,15 +23,4 @@ manifests:
       architecture: arm
       os: linux
       variant: v7
-  -
-    image: plugins/npm:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1803
-    platform:
-      architecture: amd64
-      os: windows
-      version: 1803
-  -
-    image: plugins/npm:{{#if build.tag}}{{trimPrefix "v" build.tag}}-{{/if}}windows-1809
-    platform:
-      architecture: amd64
-      os: windows
-      version: 1809
+
