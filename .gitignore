@@ -23,8 +23,9 @@ _testmain.go
 *.test
 *.prof
 
-release/
-vendor/
-
 coverage.out
-drone-npm
+
+# Executable
+release/
+./drone-npm
+./drone-npm.exe
