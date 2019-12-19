@@ -7,7 +7,15 @@ package npm
 
 // Settings for the Plugin.
 type Settings struct {
-	// Fill in the data structure with appropriate values
+	Username              string
+	Password              string
+	Token                 string
+	Email                 string
+	Registry              string
+	Folder                string
+	FailOnVersionConflict bool
+	Tag                   string
+	Access                string
 }
 
 func (p *pluginImpl) Validate() error {
