@@ -14,6 +14,7 @@ type pluginImpl struct {
 	settings Settings
 	pipeline plugin.Pipeline
 	network  urfave.Network
+	npm      *npmPackage
 }
 
 // New Plugin from the given Settings, Pipeline, and Network.
