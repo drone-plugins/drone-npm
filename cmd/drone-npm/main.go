@@ -8,10 +8,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/drone-plugins/drone-plugin-lib/pkg/urfave"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 
@@ -46,12 +46,12 @@ func run(ctx *cli.Context) error {
 
 	// Validate the settings
 	if err := plugin.Validate(); err != nil {
-		return errors.Wrap(err, "validation failed")
+		return fmt.Errorf("Validation failed %w", err)
 	}
 
 	// Run the plugin
 	if err := plugin.Exec(); err != nil {
-		return errors.Wrap(err, "exec failed")
+		return fmt.Errorf("Execution failed %w", err)
 	}
 
 	return nil
