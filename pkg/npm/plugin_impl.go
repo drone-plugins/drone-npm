@@ -122,12 +122,12 @@ func (p *pluginImpl) Exec() error {
 /// writeNpmrc creates a .npmrc in the folder for authentication
 func (p *pluginImpl) writeNpmrc() error {
 	var f func(settings Settings) string
-    if len(p.settings.Token) == 0 {
+	if len(p.settings.Token) == 0 {
 		logrus.WithFields(logrus.Fields{
 			"username": p.settings.Username,
 			"email":    p.settings.Email,
 		}).Info("Specified credentials")
-        f = npmrcContentsUsernamePassword
+		f = npmrcContentsUsernamePassword
 	} else {
 		logrus.Info("Token credentials being used")
 		f = npmrcContentsToken
