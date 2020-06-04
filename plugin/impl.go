@@ -55,13 +55,13 @@ func (p *Plugin) Validate() error {
 	// Check authentication options
 	if len(p.settings.Token) == 0 {
 		if len(p.settings.Username) == 0 {
-			return fmt.Errorf("No username provided")
+			return fmt.Errorf("no username provided")
 		}
 		if len(p.settings.Email) == 0 {
-			return fmt.Errorf("No email address provided")
+			return fmt.Errorf("no email address provided")
 		}
 		if len(p.settings.Password) == 0 {
-			return fmt.Errorf("No password provided")
+			return fmt.Errorf("no password provided")
 		}
 
 		logrus.WithFields(logrus.Fields{
@@ -75,7 +75,7 @@ func (p *Plugin) Validate() error {
 	// Verify package.json file
 	npm, err := readPackageFile(p.settings.Folder)
 	if err != nil {
-		return fmt.Errorf("Invalid package.json %w", err)
+		return fmt.Errorf("invalid package.json: %w", err)
 	}
 
 	// Verify the same registry is being used
@@ -84,7 +84,7 @@ func (p *Plugin) Validate() error {
 	}
 
 	if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 {
-		return fmt.Errorf("Registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
+		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
 	p.settings.npm = npm
@@ -96,25 +96,25 @@ func (p *Plugin) Validate() error {
 func (p *Plugin) Execute() error {
 	// Write the npmrc file
 	if err := p.writeNpmrc(); err != nil {
-		return fmt.Errorf("Could not create npmrc %w", err)
+		return fmt.Errorf("could not create npmrc: %w", err)
 	}
 
 	// Attempt authentication
 	if err := p.authenticate(); err != nil {
-		return fmt.Errorf("Could not authenticate %w", err)
+		return fmt.Errorf("could not authenticate: %w", err)
 	}
 
 	// Determine whether to publish
 	publish, err := p.shouldPublishPackage()
 
 	if err != nil {
-		return fmt.Errorf("Could not determine if package should be published %w", err)
+		return fmt.Errorf("could not determine if package should be published: %w", err)
 	}
 
 	if publish {
 		logrus.Info("Publishing package")
 		if err = runCommand(publishCommand(p.settings), p.settings.Folder); err != nil {
-			return fmt.Errorf("Could not publish package %w", err)
+			return fmt.Errorf("could not publish package: %w", err)
 		}
 	} else {
 		logrus.Info("Not publishing package")
@@ -184,7 +184,7 @@ func (p *Plugin) shouldPublishPackage() (bool, error) {
 			if strings.Compare(p.settings.npm.Version, value) == 0 {
 				logrus.Info("Version found in the registry")
 				if p.settings.FailOnVersionConflict {
-					return false, fmt.Errorf("Cannot publish package due to version conflict")
+					return false, fmt.Errorf("cannot publish package due to version conflict")
 				}
 				return false, nil
 			}
@@ -238,16 +238,16 @@ func readPackageFile(folder string) (*npmPackage, error) {
 	info, err := os.Stat(packagePath)
 
 	if os.IsNotExist(err) {
-		return nil, fmt.Errorf("No package.json at %s %w", packagePath, err)
+		return nil, fmt.Errorf("no package.json at %s: %w", packagePath, err)
 	}
 	if info.IsDir() {
-		return nil, fmt.Errorf("The package.json at %s is a directory", packagePath)
+		return nil, fmt.Errorf("the package.json at %s is a directory", packagePath)
 	}
 
 	// Read the file
 	file, err := ioutil.ReadFile(packagePath)
 	if err != nil {
-		return nil, fmt.Errorf("Could not read package.json at %s %w", packagePath, err)
+		return nil, fmt.Errorf("could not read package.json at %s: %w", packagePath, err)
 	}
 
 	// Unmarshal the json data
@@ -259,10 +259,10 @@ func readPackageFile(folder string) (*npmPackage, error) {
 
 	// Make sure values are present
 	if len(npm.Name) == 0 {
-		return nil, fmt.Errorf("No package name present")
+		return nil, fmt.Errorf("no package name present")
 	}
 	if len(npm.Version) == 0 {
-		return nil, fmt.Errorf("No package version present")
+		return nil, fmt.Errorf("no package version present")
 	}
 
 	// Set the default registry
