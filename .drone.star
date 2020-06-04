@@ -1,16 +1,13 @@
-# drone-npm build
-
 def main(ctx):
-  before = testing()
+  before = testing(ctx)
 
   stages = [
-    linux('amd64'),
-    linux('arm64'),
-    linux('arm'),
-
+    linux(ctx, 'amd64'),
+    linux(ctx, 'arm64'),
+    linux(ctx, 'arm'),
   ]
 
-  after = manifest() + gitter()
+  after = manifest(ctx) + gitter(ctx)
 
   for b in before:
     for s in stages:
@@ -22,7 +19,7 @@ def main(ctx):
 
   return before + stages + after
 
-def testing():
+def testing(ctx):
   return [{
     'kind': 'pipeline',
     'type': 'docker',
@@ -33,163 +30,165 @@ def testing():
     },
     'steps': [
       {
-        'name': 'vet',
+        'name': 'staticcheck',
         'image': 'golang:1.13',
         'pull': 'always',
         'commands': [
-          'go version',
-          'go vet ./...'
+          'go run honnef.co/go/tools/cmd/staticcheck ./...',
         ],
         'volumes': [
           {
             'name': 'gopath',
-            'path': '/go'
-          }
-        ]
+            'path': '/go',
+          },
+        ],
+      },
+      {
+        'name': 'lint',
+        'image': 'golang:1.13',
+        'pull': 'always',
+        'commands': [
+          'go run golang.org/x/lint/golint -set_exit_status ./...',
+        ],
+        'volumes': [
+          {
+            'name': 'gopath',
+            'path': '/go',
+          },
+        ],
+      },
+      {
+        'name': 'vet',
+        'image': 'golang:1.13',
+        'pull': 'always',
+        'commands': [
+          'go vet ./...',
+        ],
+        'volumes': [
+          {
+            'name': 'gopath',
+            'path': '/go',
+          },
+        ],
       },
       {
         'name': 'test',
         'image': 'golang:1.13',
         'pull': 'always',
         'commands': [
-          'go version',
-          'go test -cover ./...'
+          'go test -cover ./...',
         ],
         'volumes': [
           {
             'name': 'gopath',
-            'path': '/go'
-          }
-        ]
-      }
+            'path': '/go',
+          },
+        ],
+      },
     ],
     'volumes': [
       {
         'name': 'gopath',
-        'temp': {}
-      }
+        'temp': {},
+      },
     ],
     'trigger': {
       'ref': [
         'refs/heads/master',
         'refs/tags/**',
-        'refs/pull/**'
-      ]
-    }
+        'refs/pull/**',
+      ],
+    },
   }]
 
-def linux(arch):
+def linux(ctx, arch):
+  docker = {
+    'dockerfile': 'docker/Dockerfile.linux.%s' % (arch),
+    'repo': 'plugins/npm',
+    'username': {
+      'from_secret': 'docker_username',
+    },
+    'password': {
+      'from_secret': 'docker_password',
+    },
+  }
+
+  if ctx.build.event == 'pull_request':
+    docker.update({
+      'dry_run': True,
+      'tags': 'linux-%s' % (arch),
+    })
+  else:
+    docker.update({
+      'auto_tag': True,
+      'auto_tag_suffix': 'linux-%s' % (arch),
+    })
+
+  if ctx.build.event == 'tag':
+    build = [
+      'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/linux/%s/drone-npm ./cmd/drone-npm' % (ctx.build.ref.replace("refs/tags/v", ""), arch),
+    ]
+  else:
+    build = [
+      'go build -v -ldflags "-X main.version=%s" -a -tags netgo -o release/linux/%s/drone-npm ./cmd/drone-npm' % (ctx.build.commit[0:8], arch),
+    ]
+
   return {
     'kind': 'pipeline',
     'type': 'docker',
-    'name': 'linux-%s' % arch,
+    'name': 'linux-%s' % (arch),
     'platform': {
       'os': 'linux',
       'arch': arch,
     },
     'steps': [
       {
-        'name': 'build-push',
+        'name': 'environment',
         'image': 'golang:1.13',
         'pull': 'always',
         'environment': {
-          'CGO_ENABLED': '0'
+          'CGO_ENABLED': '0',
         },
         'commands': [
           'go version',
-          'go build -v -ldflags "-X main.version=${DRONE_COMMIT_SHA:0:8}" -a -tags netgo -o release/linux/%s/drone-npm ./cmd/drone-npm' % arch,
+          'go env',
         ],
-        'when': {
-          'event': {
-            'exclude': [
-              'tag'
-            ]
-          }
-        }
       },
       {
-        'name': 'build-tag',
+        'name': 'build',
         'image': 'golang:1.13',
         'pull': 'always',
         'environment': {
-          'CGO_ENABLED': '0'
+          'CGO_ENABLED': '0',
         },
-        'commands': [
-          'go version',
-          'go build -v -ldflags "-X main.version=${DRONE_TAG##v}" -a -tags netgo -o release/linux/%s/drone-npm ./cmd/drone-npm' % arch,
-        ],
-        'when': {
-          'event': [
-            'tag'
-          ]
-        }
+        'commands': build,
       },
       {
         'name': 'executable',
         'image': 'golang:1.13',
         'pull': 'always',
         'commands': [
-          './release/linux/%s/drone-npm --help' % arch
-        ]
+          './release/linux/%s/drone-npm --help' % (arch),
+        ],
       },
       {
-        'name': 'dryrun',
+        'name': 'docker',
         'image': 'plugins/docker',
         'pull': 'always',
-        'settings': {
-          'dry_run': True,
-          'tags': 'linux-%s' % arch,
-          'dockerfile': 'docker/Dockerfile.linux.%s' % arch,
-          'repo': 'plugins/npm',
-          'username': {
-            'from_secret': 'docker_username'
-          },
-          'password': {
-            'from_secret': 'docker_password'
-          }
-        },
-        'when': {
-          'event': [
-            'pull_request'
-          ]
-        }
+        'settings': docker,
       },
-      {
-        'name': 'publish',
-        'image': 'plugins/docker',
-        'pull': 'always',
-        'settings': {
-          'auto_tag': True,
-          'auto_tag_suffix': 'linux-%s' % arch,
-          'dockerfile': 'docker/Dockerfile.linux.%s' % arch,
-          'repo': 'plugins/npm',
-          'username': {
-            'from_secret': 'docker_username'
-          },
-          'password': {
-            'from_secret': 'docker_password'
-          }
-        },
-        'when': {
-          'event': {
-            'exclude': [
-              'pull_request'
-            ]
-          }
-        }
-      }
     ],
     'depends_on': [],
     'trigger': {
       'ref': [
         'refs/heads/master',
         'refs/tags/**',
-        'refs/pull/**'
-      ]
-    }
+        'refs/pull/**',
+      ],
+    },
   }
 
-def manifest():
+def manifest(ctx):
   return [{
     'kind': 'pipeline',
     'type': 'docker',
@@ -202,10 +201,10 @@ def manifest():
         'settings': {
           'auto_tag': 'true',
           'username': {
-            'from_secret': 'docker_username'
+            'from_secret': 'docker_username',
           },
           'password': {
-            'from_secret': 'docker_password'
+            'from_secret': 'docker_password',
           },
           'spec': 'docker/manifest.tmpl',
           'ignore_missing': 'true',
@@ -217,27 +216,27 @@ def manifest():
         'pull': 'always',
         'settings': {
           'urls': {
-            'from_secret': 'microbadger_url'
-          }
+            'from_secret': 'microbadger_url',
+          },
         },
-      }
+      },
     ],
     'depends_on': [],
     'trigger': {
       'ref': [
         'refs/heads/master',
-        'refs/tags/**'
-      ]
-    }
+        'refs/tags/**',
+      ],
+    },
   }]
 
-def gitter():
+def gitter(ctx):
   return [{
     'kind': 'pipeline',
     'type': 'docker',
     'name': 'gitter',
     'clone': {
-      'disable': True
+      'disable': True,
     },
     'steps': [
       {
@@ -246,22 +245,21 @@ def gitter():
         'pull': 'always',
         'settings': {
           'webhook': {
-            'from_secret': 'gitter_webhook'
+            'from_secret': 'gitter_webhook',
           }
         },
       },
     ],
     'depends_on': [
-      'manifest'
+      'manifest',
     ],
     'trigger': {
       'ref': [
         'refs/heads/master',
         'refs/tags/**',
-        'refs/pull/**'
       ],
       'status': [
-        'failure'
-      ]
-    }
+        'failure',
+      ],
+    },
   }]

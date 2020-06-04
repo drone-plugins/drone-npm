@@ -1,9 +1,9 @@
-// Copyright (c) 2019, the Drone Plugins project authors.
+// Copyright (c) 2020, the Drone Plugins project authors.
 // Please see the AUTHORS file for details. All rights reserved.
 // Use of this source code is governed by an Apache 2.0 license that can be
 // found in the LICENSE file.
 
-package npm
+package plugin
 
 import (
 	"encoding/base64"
@@ -32,6 +32,8 @@ type (
 		FailOnVersionConflict bool
 		Tag                   string
 		Access                string
+
+		npm *npmPackage
 	}
 
 	npmPackage struct {
@@ -48,7 +50,8 @@ type (
 // globalRegistry defines the default NPM registry.
 const globalRegistry = "https://registry.npmjs.org/"
 
-func (p *pluginImpl) Validate() error {
+// Validate handles the settings validation of the plugin.
+func (p *Plugin) Validate() error {
 	// Check authentication options
 	if len(p.settings.Token) == 0 {
 		if len(p.settings.Username) == 0 {
@@ -84,12 +87,13 @@ func (p *pluginImpl) Validate() error {
 		return fmt.Errorf("Registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
-	p.npm = npm
+	p.settings.npm = npm
 
 	return nil
 }
 
-func (p *pluginImpl) Exec() error {
+// Execute provides the implementation of the plugin.
+func (p *Plugin) Execute() error {
 	// Write the npmrc file
 	if err := p.writeNpmrc(); err != nil {
 		return fmt.Errorf("Could not create npmrc %w", err)
@@ -120,7 +124,7 @@ func (p *pluginImpl) Exec() error {
 }
 
 /// writeNpmrc creates a .npmrc in the folder for authentication
-func (p *pluginImpl) writeNpmrc() error {
+func (p *Plugin) writeNpmrc() error {
 	var f func(settings Settings) string
 	if len(p.settings.Token) == 0 {
 		logrus.WithFields(logrus.Fields{
@@ -147,8 +151,8 @@ func (p *pluginImpl) writeNpmrc() error {
 }
 
 /// shouldPublishPackage determines if the package should be published
-func (p *pluginImpl) shouldPublishPackage() (bool, error) {
-	cmd := packageVersionsCommand(p.npm.Name)
+func (p *Plugin) shouldPublishPackage() (bool, error) {
+	cmd := packageVersionsCommand(p.settings.npm.Name)
 	cmd.Dir = p.settings.Folder
 
 	trace(cmd)
@@ -177,7 +181,7 @@ func (p *pluginImpl) shouldPublishPackage() (bool, error) {
 		for _, value := range versions {
 			logrus.WithField("version", value).Debug("Found version of package")
 
-			if strings.Compare(p.npm.Version, value) == 0 {
+			if strings.Compare(p.settings.npm.Version, value) == 0 {
 				logrus.Info("Version found in the registry")
 				if p.settings.FailOnVersionConflict {
 					return false, fmt.Errorf("Cannot publish package due to version conflict")
@@ -195,7 +199,7 @@ func (p *pluginImpl) shouldPublishPackage() (bool, error) {
 }
 
 /// authenticate atempts to authenticate with the NPM registry.
-func (p *pluginImpl) authenticate() error {
+func (p *Plugin) authenticate() error {
 	var cmds []*exec.Cmd
 
 	// Write the version command

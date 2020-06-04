@@ -1,4 +1,4 @@
-// Copyright (c) 2019, the Drone Plugins project authors.
+// Copyright (c) 2020, the Drone Plugins project authors.
 // Please see the AUTHORS file for details. All rights reserved.
 // Use of this source code is governed by an Apache 2.0 license that can be
 // found in the LICENSE file.
@@ -8,51 +8,57 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/drone-plugins/drone-plugin-lib/pkg/urfave"
-	"github.com/sirupsen/logrus"
+	"github.com/drone-plugins/drone-npm/plugin"
+	"github.com/drone-plugins/drone-plugin-lib/errors"
+	"github.com/drone-plugins/drone-plugin-lib/urfave"
 	"github.com/urfave/cli/v2"
-
-	"github.com/drone-plugins/drone-npm/pkg/npm"
 )
 
-var (
-	version = "unknown"
-)
+var version = "unknown"
 
 func main() {
 	app := cli.NewApp()
-	app.Name = "npm plugin"
+	app.Name = "drone-npm"
 	app.Usage = "pushes a package to a npm repository"
-	app.Action = run
-	app.Flags = append(settingsFlags(), urfave.Flags()...)
+	app.Version = version
 
-	// Run the application
+	settings := plugin.Settings{}
+	app.Flags = append(settingsFlags(&settings), urfave.Flags()...)
+	app.Action = run(&settings)
+
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatal(err)
+		errors.HandleExit(err)
 	}
 }
 
-func run(ctx *cli.Context) error {
-	urfave.LoggingFromContext(ctx)
+func run(settings *plugin.Settings) cli.ActionFunc {
+	return func(ctx *cli.Context) error {
+		urfave.LoggingFromContext(ctx)
 
-	plugin := npm.New(
-		settingsFromContext(ctx),
-		urfave.PipelineFromContext(ctx),
-		urfave.NetworkFromContext(ctx),
-	)
+		plugin := plugin.New(
+			*settings,
+			urfave.PipelineFromContext(ctx),
+			urfave.NetworkFromContext(ctx),
+		)
 
-	// Validate the settings
-	if err := plugin.Validate(); err != nil {
-		return fmt.Errorf("Validation failed %w", err)
+		if err := plugin.Validate(); err != nil {
+			if e, ok := err.(errors.ExitCoder); ok {
+				return e
+			}
+
+			return errors.ExitMessagef("validation failed: %w", err)
+		}
+
+		if err := plugin.Execute(); err != nil {
+			if e, ok := err.(errors.ExitCoder); ok {
+				return e
+			}
+
+			return errors.ExitMessagef("execution failed: %w", err)
+		}
+
+		return nil
 	}
-
-	// Run the plugin
-	if err := plugin.Exec(); err != nil {
-		return fmt.Errorf("Execution failed %w", err)
-	}
-
-	return nil
 }
