@@ -13,20 +13,26 @@ import (
 	"github.com/drone-plugins/drone-npm/plugin"
 	"github.com/drone-plugins/drone-plugin-lib/errors"
 	"github.com/drone-plugins/drone-plugin-lib/urfave"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 )
 
 var version = "unknown"
 
 func main() {
-	app := cli.NewApp()
-	app.Name = "drone-npm"
-	app.Usage = "pushes a package to a npm repository"
-	app.Version = version
+	settings := &plugin.Settings{}
 
-	settings := plugin.Settings{}
-	app.Flags = append(settingsFlags(&settings), urfave.Flags()...)
-	app.Action = run(&settings)
+	if _, err := os.Stat("/run/drone/env"); err == nil {
+		godotenv.Overload("/run/drone/env")
+	}
+
+	app := &cli.App{
+		Name:    "drone-npm",
+		Usage:   "push a package to a npm repository",
+		Version: version,
+		Flags:   append(settingsFlags(settings), urfave.Flags()...),
+		Action:  run(settings),
+	}
 
 	if err := app.Run(os.Args); err != nil {
 		errors.HandleExit(err)
