@@ -37,6 +37,12 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			EnvVars:     []string{"PLUGIN_TOKEN", "NPM_TOKEN"},
 			Destination: &settings.Token,
 		},
+		&cli.BoolFlag{
+			Name:        "skip-whoami",
+			Usage:       "Skip credentials verification by running npm whoami command",
+			EnvVars:     []string{"PLUGIN_SKIP_WHOAMI", "NPM_SKIP_WHOAMI"},
+			Destination: &settings.SkipWhoami,
+		},
 		&cli.StringFlag{
 			Name:        "registry",
 			Usage:       "NPM registry",
