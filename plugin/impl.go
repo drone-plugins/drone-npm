@@ -26,6 +26,7 @@ type (
 		Username              string
 		Password              string
 		Token                 string
+		SkipWhoami            bool
 		Email                 string
 		Registry              string
 		Folder                string
@@ -219,7 +220,9 @@ func (p *Plugin) authenticate() error {
 	}
 
 	// Write whoami command to verify credentials
-	cmds = append(cmds, whoamiCommand())
+	if !p.settings.SkipWhoami {
+		cmds = append(cmds, whoamiCommand())
+	}
 
 	// Run commands
 	err := runCommands(cmds, p.settings.Folder)
