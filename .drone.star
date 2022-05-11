@@ -7,7 +7,7 @@ def main(ctx):
     linux(ctx, 'arm'),
   ]
 
-  after = manifest(ctx) + gitter(ctx)
+  after = manifest(ctx)
 
   for b in before:
     for s in stages:
@@ -210,16 +210,6 @@ def manifest(ctx):
           'ignore_missing': 'true',
         },
       },
-      {
-        'name': 'microbadger',
-        'image': 'plugins/webhook',
-        'pull': 'always',
-        'settings': {
-          'urls': {
-            'from_secret': 'microbadger_url',
-          },
-        },
-      },
     ],
     'depends_on': [],
     'trigger': {
@@ -230,36 +220,3 @@ def manifest(ctx):
     },
   }]
 
-def gitter(ctx):
-  return [{
-    'kind': 'pipeline',
-    'type': 'docker',
-    'name': 'gitter',
-    'clone': {
-      'disable': True,
-    },
-    'steps': [
-      {
-        'name': 'gitter',
-        'image': 'plugins/gitter',
-        'pull': 'always',
-        'settings': {
-          'webhook': {
-            'from_secret': 'gitter_webhook',
-          }
-        },
-      },
-    ],
-    'depends_on': [
-      'manifest',
-    ],
-    'trigger': {
-      'ref': [
-        'refs/heads/master',
-        'refs/tags/**',
-      ],
-      'status': [
-        'failure',
-      ],
-    },
-  }]
