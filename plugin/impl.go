@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/url"
 	"os"
 	"os/exec"
@@ -297,6 +298,10 @@ func npmrcContentsUsernamePassword(config Settings) string {
 func npmrcContentsToken(config Settings) string {
 	registry, _ := url.Parse(config.Registry)
 	registry.Scheme = "" // Reset the scheme to empty. This makes it so we will get a protocol relative URL.
+	host, port, _ := net.SplitHostPort(registry.Host)
+	if port == "80" || port == "443" {
+		registry.Host = host // Remove standard ports as they're not supported in authToken since NPM 7.
+	}
 	registryString := registry.String()
 
 	if !strings.HasSuffix(registryString, "/") {
