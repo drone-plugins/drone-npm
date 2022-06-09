@@ -30,39 +30,13 @@ def testing(ctx):
     },
     'steps': [
       {
-        'name': 'staticcheck',
-        'image': 'golang:1.15',
-        'pull': 'always',
-        'commands': [
-          'go run honnef.co/go/tools/cmd/staticcheck ./...',
-        ],
-        'volumes': [
-          {
-            'name': 'gopath',
-            'path': '/go',
-          },
-        ],
-      },
-      {
         'name': 'lint',
-        'image': 'golang:1.15',
+        'image': 'golang:1.18',
         'pull': 'always',
         'commands': [
-          'go run golang.org/x/lint/golint -set_exit_status ./...',
-        ],
-        'volumes': [
-          {
-            'name': 'gopath',
-            'path': '/go',
-          },
-        ],
-      },
-      {
-        'name': 'vet',
-        'image': 'golang:1.15',
-        'pull': 'always',
-        'commands': [
-          'go vet ./...',
+          "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
+          "golangci-lint version",
+          "golangci-lint run",
         ],
         'volumes': [
           {
@@ -73,7 +47,7 @@ def testing(ctx):
       },
       {
         'name': 'test',
-        'image': 'golang:1.15',
+        'image': 'golang:1.18',
         'pull': 'always',
         'commands': [
           'go test -cover ./...',
@@ -144,7 +118,7 @@ def linux(ctx, arch):
     'steps': [
       {
         'name': 'environment',
-        'image': 'golang:1.15',
+        'image': 'golang:1.18',
         'pull': 'always',
         'environment': {
           'CGO_ENABLED': '0',
@@ -156,7 +130,7 @@ def linux(ctx, arch):
       },
       {
         'name': 'build',
-        'image': 'golang:1.15',
+        'image': 'golang:1.18',
         'pull': 'always',
         'environment': {
           'CGO_ENABLED': '0',
@@ -165,7 +139,7 @@ def linux(ctx, arch):
       },
       {
         'name': 'executable',
-        'image': 'golang:1.15',
+        'image': 'golang:1.18',
         'pull': 'always',
         'commands': [
           './release/linux/%s/drone-npm --help' % (arch),
@@ -219,4 +193,3 @@ def manifest(ctx):
       ],
     },
   }]
-
