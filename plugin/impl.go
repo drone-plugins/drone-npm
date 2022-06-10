@@ -6,10 +6,11 @@
 package plugin
 
 import (
-	"encoding/base64"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -45,6 +46,17 @@ type (
 
 	npmConfig struct {
 		Registry string `json:"registry"`
+	}
+
+	authPaylaod struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+
+	authResult struct {
+		Error string `json:"error"`
+		Token string `json:"token"`
 	}
 )
 
@@ -124,18 +136,68 @@ func (p *Plugin) Execute() error {
 	return nil
 }
 
+// npmGetToken get a new auth token from NPM registry
+func npmGetToken(config *Settings) (string, error) {
+	payload, err := json.Marshal(authPaylaod{
+		Name:     config.Username,
+		Password: config.Password,
+		Email:    config.Email,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	url := fmt.Sprintf(
+		"%s/-/user/org.couchdb.user:%s",
+		strings.TrimSuffix(config.Registry, "/"),
+		config.Username,
+	)
+
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(payload))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(config.Username, config.Password)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return "", fmt.Errorf("could not get token: %d - %s", resp.StatusCode, resp.Status)
+	}
+
+	var result authResult
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return "", err
+	}
+
+	if result.Error != "" {
+		return "", fmt.Errorf("could not get token: %d - %s", resp.StatusCode, result.Error)
+	}
+
+	return result.Token, nil
+}
+
 /// writeNpmrc creates a .npmrc in the folder for authentication
 func (p *Plugin) writeNpmrc() error {
-	var f func(settings *Settings) string
 	if p.settings.Token == "" {
 		logrus.WithFields(logrus.Fields{
 			"username": p.settings.Username,
 			"email":    p.settings.Email,
 		}).Info("Specified credentials")
-		f = npmrcContentsUsernamePassword
-	} else {
-		logrus.Info("Token credentials being used")
-		f = npmrcContentsToken
+
+		token, err := npmGetToken(&p.settings)
+		if err != nil {
+			return err
+		}
+		p.settings.Token = token
 	}
 
 	// write npmrc file
@@ -148,7 +210,7 @@ func (p *Plugin) writeNpmrc() error {
 
 	logrus.WithField("path", npmrcPath).Info("Writing npmrc")
 
-	return os.WriteFile(npmrcPath, []byte(f(&p.settings)), 0644) //nolint:gomnd
+	return os.WriteFile(npmrcPath, []byte(npmrcContentsToken(&p.settings)), 0644) //nolint:gomnd
 }
 
 /// shouldPublishPackage determines if the package should be published
@@ -280,17 +342,6 @@ func readPackageFile(folder string) (*npmPackage, error) {
 	}).Info("Found package.json")
 
 	return &npm, nil
-}
-
-// npmrcContentsUsernamePassword creates the contents from a username and
-// password
-func npmrcContentsUsernamePassword(config *Settings) string {
-	// get the base64 encoded string
-	authString := fmt.Sprintf("%s:%s", config.Username, config.Password)
-	encoded := base64.StdEncoding.EncodeToString([]byte(authString))
-
-	// create the file contents
-	return fmt.Sprintf("_auth = %s\nemail = %s", encoded, config.Email)
 }
 
 /// Writes npmrc contents when using a token
