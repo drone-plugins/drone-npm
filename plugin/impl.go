@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
@@ -55,14 +54,14 @@ const globalRegistry = "https://registry.npmjs.org/"
 // Validate handles the settings validation of the plugin.
 func (p *Plugin) Validate() error {
 	// Check authentication options
-	if len(p.settings.Token) == 0 {
-		if len(p.settings.Username) == 0 {
+	if p.settings.Token == "" {
+		if p.settings.Username == "" {
 			return fmt.Errorf("no username provided")
 		}
-		if len(p.settings.Email) == 0 {
+		if p.settings.Email == "" {
 			return fmt.Errorf("no email address provided")
 		}
-		if len(p.settings.Password) == 0 {
+		if p.settings.Password == "" {
 			return fmt.Errorf("no password provided")
 		}
 
@@ -81,7 +80,7 @@ func (p *Plugin) Validate() error {
 	}
 
 	// Verify the same registry is being used
-	if len(p.settings.Registry) == 0 {
+	if p.settings.Registry == "" {
 		p.settings.Registry = globalRegistry
 	}
 
@@ -115,7 +114,7 @@ func (p *Plugin) Execute() error {
 
 	if publish {
 		logrus.Info("Publishing package")
-		if err = runCommand(publishCommand(p.settings), p.settings.Folder); err != nil {
+		if err = runCommand(publishCommand(&p.settings), p.settings.Folder); err != nil {
 			return fmt.Errorf("could not publish package: %w", err)
 		}
 	} else {
@@ -127,8 +126,8 @@ func (p *Plugin) Execute() error {
 
 /// writeNpmrc creates a .npmrc in the folder for authentication
 func (p *Plugin) writeNpmrc() error {
-	var f func(settings Settings) string
-	if len(p.settings.Token) == 0 {
+	var f func(settings *Settings) string
+	if p.settings.Token == "" {
 		logrus.WithFields(logrus.Fields{
 			"username": p.settings.Username,
 			"email":    p.settings.Email,
@@ -141,15 +140,15 @@ func (p *Plugin) writeNpmrc() error {
 
 	// write npmrc file
 	home := "/root"
-	user, err := user.Current()
+	currentUser, err := user.Current()
 	if err == nil {
-		home = user.HomeDir
+		home = currentUser.HomeDir
 	}
 	npmrcPath := path.Join(home, ".npmrc")
 
 	logrus.WithField("path", npmrcPath).Info("Writing npmrc")
 
-	return ioutil.WriteFile(npmrcPath, []byte(f(p.settings)), 0644)
+	return os.WriteFile(npmrcPath, []byte(f(&p.settings)), 0644) //nolint:gomnd
 }
 
 /// shouldPublishPackage determines if the package should be published
@@ -183,7 +182,7 @@ func (p *Plugin) shouldPublishPackage() (bool, error) {
 		for _, value := range versions {
 			logrus.WithField("version", value).Debug("Found version of package")
 
-			if strings.Compare(p.settings.npm.Version, value) == 0 {
+			if p.settings.npm.Version == value {
 				logrus.Info("Version found in the registry")
 				if p.settings.FailOnVersionConflict {
 					return false, fmt.Errorf("cannot publish package due to version conflict")
@@ -249,7 +248,7 @@ func readPackageFile(folder string) (*npmPackage, error) {
 	}
 
 	// Read the file
-	file, err := ioutil.ReadFile(packagePath)
+	file, err := os.ReadFile(packagePath)
 	if err != nil {
 		return nil, fmt.Errorf("could not read package.json at %s: %w", packagePath, err)
 	}
@@ -262,15 +261,15 @@ func readPackageFile(folder string) (*npmPackage, error) {
 	}
 
 	// Make sure values are present
-	if len(npm.Name) == 0 {
+	if npm.Name == "" {
 		return nil, fmt.Errorf("no package name present")
 	}
-	if len(npm.Version) == 0 {
+	if npm.Version == "" {
 		return nil, fmt.Errorf("no package version present")
 	}
 
 	// Set the default registry
-	if len(npm.Config.Registry) == 0 {
+	if npm.Config.Registry == "" {
 		npm.Config.Registry = globalRegistry
 	}
 
@@ -285,7 +284,7 @@ func readPackageFile(folder string) (*npmPackage, error) {
 
 // npmrcContentsUsernamePassword creates the contents from a username and
 // password
-func npmrcContentsUsernamePassword(config Settings) string {
+func npmrcContentsUsernamePassword(config *Settings) string {
 	// get the base64 encoded string
 	authString := fmt.Sprintf("%s:%s", config.Username, config.Password)
 	encoded := base64.StdEncoding.EncodeToString([]byte(authString))
@@ -295,7 +294,7 @@ func npmrcContentsUsernamePassword(config Settings) string {
 }
 
 /// Writes npmrc contents when using a token
-func npmrcContentsToken(config Settings) string {
+func npmrcContentsToken(config *Settings) string {
 	registry, _ := url.Parse(config.Registry)
 	registry.Scheme = "" // Reset the scheme to empty. This makes it so we will get a protocol relative URL.
 	host, port, _ := net.SplitHostPort(registry.Host)
@@ -305,7 +304,7 @@ func npmrcContentsToken(config Settings) string {
 	registryString := registry.String()
 
 	if !strings.HasSuffix(registryString, "/") {
-		registryString = registryString + "/"
+		registryString += "/"
 	}
 	return fmt.Sprintf("%s:_authToken=%s", registryString, config.Token)
 }
@@ -341,14 +340,14 @@ func packageVersionsCommand(name string) *exec.Cmd {
 }
 
 // publishCommand runs the publish command
-func publishCommand(settings Settings) *exec.Cmd {
+func publishCommand(settings *Settings) *exec.Cmd {
 	commandArgs := []string{"publish"}
 
-	if len(settings.Tag) != 0 {
+	if settings.Tag != "" {
 		commandArgs = append(commandArgs, "--tag", settings.Tag)
 	}
 
-	if len(settings.Access) != 0 {
+	if settings.Access != "" {
 		commandArgs = append(commandArgs, "--access", settings.Access)
 	}
 

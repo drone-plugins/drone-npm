@@ -17,6 +17,7 @@ type Plugin struct {
 }
 
 // New initializes a plugin from the given Settings, Pipeline, and Network.
+//nolint:gocritic
 func New(settings Settings, pipeline drone.Pipeline, network drone.Network) drone.Plugin {
 	return &Plugin{
 		settings: settings,

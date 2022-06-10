@@ -23,7 +23,7 @@ func main() {
 	settings := &plugin.Settings{}
 
 	if _, err := os.Stat("/run/drone/env"); err == nil {
-		godotenv.Overload("/run/drone/env")
+		godotenv.Overload("/run/drone/env") //nolint:errcheck
 	}
 
 	app := &cli.App{
@@ -43,13 +43,13 @@ func run(settings *plugin.Settings) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		urfave.LoggingFromContext(ctx)
 
-		plugin := plugin.New(
+		p := plugin.New(
 			*settings,
 			urfave.PipelineFromContext(ctx),
 			urfave.NetworkFromContext(ctx),
 		)
 
-		if err := plugin.Validate(); err != nil {
+		if err := p.Validate(); err != nil {
 			if e, ok := err.(errors.ExitCoder); ok {
 				return e
 			}
@@ -57,7 +57,7 @@ func run(settings *plugin.Settings) cli.ActionFunc {
 			return errors.ExitMessagef("validation failed: %w", err)
 		}
 
-		if err := plugin.Execute(); err != nil {
+		if err := p.Execute(); err != nil {
 			if e, ok := err.(errors.ExitCoder); ok {
 				return e
 			}
