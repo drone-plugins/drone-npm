@@ -7,6 +7,7 @@ package plugin
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -147,13 +148,13 @@ func npmGetToken(config *Settings) (string, error) {
 		return "", err
 	}
 
-	url := fmt.Sprintf(
+	loginURL := fmt.Sprintf(
 		"%s/-/user/org.couchdb.user:%s",
 		strings.TrimSuffix(config.Registry, "/"),
 		config.Username,
 	)
 
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, loginURL, bytes.NewReader(payload))
 	if err != nil {
 		return "", err
 	}
