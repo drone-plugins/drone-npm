@@ -124,7 +124,7 @@ func (p *Plugin) Execute() error {
 	return nil
 }
 
-/// writeNpmrc creates a .npmrc in the folder for authentication
+// / writeNpmrc creates a .npmrc in the folder for authentication
 func (p *Plugin) writeNpmrc() error {
 	var f func(settings *Settings) string
 	if p.settings.Token == "" {
@@ -151,7 +151,7 @@ func (p *Plugin) writeNpmrc() error {
 	return os.WriteFile(npmrcPath, []byte(f(&p.settings)), 0644) //nolint:gomnd
 }
 
-/// shouldPublishPackage determines if the package should be published
+// / shouldPublishPackage determines if the package should be published
 func (p *Plugin) shouldPublishPackage() (bool, error) {
 	cmd := packageVersionsCommand(p.settings.npm.Name)
 	cmd.Dir = p.settings.Folder
@@ -199,7 +199,7 @@ func (p *Plugin) shouldPublishPackage() (bool, error) {
 	return true, nil
 }
 
-/// authenticate atempts to authenticate with the NPM registry.
+// / authenticate atempts to authenticate with the NPM registry.
 func (p *Plugin) authenticate() error {
 	var cmds []*exec.Cmd
 
@@ -234,7 +234,7 @@ func (p *Plugin) authenticate() error {
 	return nil
 }
 
-/// readPackageFile reads the package file at the given path.
+// / readPackageFile reads the package file at the given path.
 func readPackageFile(folder string) (*npmPackage, error) {
 	// Verify package.json file exists
 	packagePath := path.Join(folder, "package.json")
@@ -293,7 +293,7 @@ func npmrcContentsUsernamePassword(config *Settings) string {
 	return fmt.Sprintf("_auth = %s\nemail = %s", encoded, config.Email)
 }
 
-/// Writes npmrc contents when using a token
+// / Writes npmrc contents when using a token
 func npmrcContentsToken(config *Settings) string {
 	registry, _ := url.Parse(config.Registry)
 	registry.Scheme = "" // Reset the scheme to empty. This makes it so we will get a protocol relative URL.
