@@ -211,9 +211,6 @@ func (p *Plugin) authenticate() error {
 		cmds = append(cmds, registryCommand(p.settings.Registry))
 	}
 
-	// Write auth command
-	cmds = append(cmds, alwaysAuthCommand())
-
 	// Write skip verify command
 	if p.network.SkipVerify {
 		cmds = append(cmds, skipVerifyCommand())
@@ -317,11 +314,6 @@ func versionCommand() *exec.Cmd {
 // registryCommand sets the NPM registry.
 func registryCommand(registry string) *exec.Cmd {
 	return exec.Command("npm", "config", "set", "registry", registry)
-}
-
-// alwaysAuthCommand forces authentication.
-func alwaysAuthCommand() *exec.Cmd {
-	return exec.Command("npm", "config", "set", "always-auth", "true")
 }
 
 // skipVerifyCommand disables ssl verification.
