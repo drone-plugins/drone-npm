@@ -9,6 +9,14 @@ import (
 	"testing"
 )
 
+func TestisDefaultOrNilPort(t *testing.T){
+	t.Skip()
+}
+
+func TestCheckMatchingUrlWithDefaultPorts(t *testing.T){
+	t.Skip()
+}
+
 func TestValidate(t *testing.T) {
 	t.Skip()
 }

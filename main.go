@@ -132,5 +132,11 @@ func settingsFlags(settings *plugin.Settings) []cli.Flag {
 			EnvVars:     []string{"PLUGIN_ACCESS"},
 			Destination: &settings.Access,
 		},
+		&cli.StringFlag{
+			Name:        "skipRegistryUriValidation",
+			Usage:       "skips validation for uri in package.json and the currently configured registry",
+			EnvVars:     []string{"PLUGIN_SKIP_URI_VALIDATION"},
+			Destination: &settings.SkipRegistryUriValidation,
+		},
 	}
 }

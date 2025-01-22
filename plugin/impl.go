@@ -33,6 +33,7 @@ type (
 		FailOnVersionConflict bool
 		Tag                   string
 		Access                string
+		SkipRegistryUriValidation bool
 
 		npm *npmPackage
 	}
@@ -50,6 +51,38 @@ type (
 
 // globalRegistry defines the default NPM registry.
 const globalRegistry = "https://registry.npmjs.org/"
+const defaultPortMap = map[string]string{
+	"http":80,
+	"https":443,
+}
+
+
+func (p *Plugin) CheckMatchingUrlWithDefaultPorts() bool, error{
+	parsedConifgReg, err:=url.Parse(npm.Config.Registry)
+	if err != nil{
+		return false,fmt.Errorf("package.json registry: %s failed to parse.")
+	}
+	parsedSettingsReg:=url.Parse(p.settings.Registry)
+	if err != nil{
+		return false, fmt.Errorf("Drone yaml npm Registry: %s failed to parse.")
+	}
+	compareWithoutDefaultPorts := strings.Compare(parsedConifgReg.Hostname(),parsedSettingsReg.Hostname()) &&
+								  strings.Compare(parsedConifgReg.Scheme, parsedSettingsReg.Scheme) &&
+								  parsedConifgReg.isDefaultOrNilPort() &&
+								  parsedConifgReg.isDefaultOrNilPort()
+	return compareWithoutDefaultPorts, nil
+								  
+}
+
+func (u *URL) isDefaultOrNilPort() bool{
+	if u.Port() != nil{
+		if port, ok:=defaultPortMap[u.Scheme]; ok{
+			return port == u.Port()
+		}
+		return false // this only happens if the scheme isn't in the above map. In this case the standard validation logic would apply
+	}
+	return true
+}
 
 // Validate handles the settings validation of the plugin.
 func (p *Plugin) Validate() error {
@@ -82,9 +115,12 @@ func (p *Plugin) Validate() error {
 	// Verify the same registry is being used
 	if p.settings.Registry == "" {
 		p.settings.Registry = globalRegistry
-	}
+	}	
 
-	if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 {
+	if p.settings.SkipRegistryUriValidation {
+		p.settings.npm = npm
+		return nil
+	} else if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 || !p.CheckMatchingUrlWithDefaultPorts() {
 		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
