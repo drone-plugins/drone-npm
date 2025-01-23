@@ -23,16 +23,16 @@ import (
 type (
 	// Settings for the Plugin.
 	Settings struct {
-		Username              string
-		Password              string
-		Token                 string
-		SkipWhoami            bool
-		Email                 string
-		Registry              string
-		Folder                string
-		FailOnVersionConflict bool
-		Tag                   string
-		Access                string
+		Username                  string
+		Password                  string
+		Token                     string
+		SkipWhoami                bool
+		Email                     string
+		Registry                  string
+		Folder                    string
+		FailOnVersionConflict     bool
+		Tag                       string
+		Access                    string
 		SkipRegistryUriValidation bool
 
 		npm *npmPackage
@@ -51,37 +51,42 @@ type (
 
 // globalRegistry defines the default NPM registry.
 const globalRegistry = "https://registry.npmjs.org/"
-const defaultPortMap = map[string]string{
-	"http":80,
-	"https":443,
+
+// May be better as an enum in order to make it a const
+var defaultPortMap = map[string]string{
+	"http":  "80",
+	"https": "443",
 }
 
-
-func (p *Plugin) CheckMatchingUrlWithDefaultPorts() bool, error{
-	parsedConifgReg, err:=url.Parse(npm.Config.Registry)
-	if err != nil{
-		return false,fmt.Errorf("package.json registry: %s failed to parse.")
-	}
-	parsedSettingsReg:=url.Parse(p.settings.Registry)
-	if err != nil{
-		return false, fmt.Errorf("Drone yaml npm Registry: %s failed to parse.")
-	}
-	compareWithoutDefaultPorts := strings.Compare(parsedConifgReg.Hostname(),parsedSettingsReg.Hostname()) &&
-								  strings.Compare(parsedConifgReg.Scheme, parsedSettingsReg.Scheme) &&
-								  parsedConifgReg.isDefaultOrNilPort() &&
-								  parsedConifgReg.isDefaultOrNilPort()
-	return compareWithoutDefaultPorts, nil
-								  
-}
-
-func (u *URL) isDefaultOrNilPort() bool{
-	if u.Port() != nil{
-		if port, ok:=defaultPortMap[u.Scheme]; ok{
+func isDefaultOrNilPort(u *url.URL) bool {
+	if u.Port() != "" {
+		if port, ok := defaultPortMap[u.Scheme]; ok {
 			return port == u.Port()
 		}
-		return false // this only happens if the scheme isn't in the above map. In this case the standard validation logic would apply
+		// this only happens if the scheme isn't in the above map.
+		// since everything should be http or https for npm it's unlikely
+		// But In this case the standard validation logic would apply later on
+		// so this is just to make sure an accidental true isn't returned
+		// npm publish also doesn't work when scheme is missing in package.json
+		return false
 	}
 	return true
+}
+
+func (p *Plugin) CheckMatchingUrlWithDefaultPorts() (bool, error) {
+	parsedConifgReg, err := url.Parse(p.settings.npm.Config.Registry)
+	if err != nil {
+		return false, fmt.Errorf("package.json registry: %s failed to parse.", p.settings.npm.Config.Registry)
+	}
+	parsedSettingsReg, err := url.Parse(p.settings.Registry)
+	if err != nil {
+		return false, fmt.Errorf("Drone yaml npm Registry: %s failed to parse.", p.settings.Registry)
+	}
+	compareWithoutDefaultPorts := strings.Compare(parsedConifgReg.Hostname(), parsedSettingsReg.Hostname()) == 0 &&
+		strings.Compare(parsedConifgReg.Scheme, parsedSettingsReg.Scheme) == 0 &&
+		isDefaultOrNilPort(parsedConifgReg) &&
+		isDefaultOrNilPort(parsedSettingsReg)
+	return compareWithoutDefaultPorts, nil
 }
 
 // Validate handles the settings validation of the plugin.
@@ -115,12 +120,16 @@ func (p *Plugin) Validate() error {
 	// Verify the same registry is being used
 	if p.settings.Registry == "" {
 		p.settings.Registry = globalRegistry
-	}	
+	}
 
+	registriesMatchWithDefaultPorts, err := p.CheckMatchingUrlWithDefaultPorts()
+	if err != nil {
+		registriesMatchWithDefaultPorts = false // if there's an error using this default to standard validation by string compare
+	}
 	if p.settings.SkipRegistryUriValidation {
 		p.settings.npm = npm
 		return nil
-	} else if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 || !p.CheckMatchingUrlWithDefaultPorts() {
+	} else if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 || registriesMatchWithDefaultPorts {
 		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
