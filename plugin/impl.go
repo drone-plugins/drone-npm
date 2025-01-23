@@ -58,7 +58,11 @@ var defaultPortMap = map[string]string{
 	"https": "443",
 }
 
-func isDefaultOrNilPort(u *url.URL) bool {
+func isNilPortOrStandardSchemePort(u *url.URL) bool {
+	if !strings.HasPrefix(u.Scheme, "http") {
+		//invalid schemes aren't worth checking
+		return false
+	}
 	if u.Port() != "" {
 		if port, ok := defaultPortMap[u.Scheme]; ok {
 			return port == u.Port()
@@ -84,8 +88,8 @@ func (p *Plugin) CheckMatchingUrlWithDefaultPorts() (bool, error) {
 	}
 	compareWithoutDefaultPorts := strings.Compare(parsedConifgReg.Hostname(), parsedSettingsReg.Hostname()) == 0 &&
 		strings.Compare(parsedConifgReg.Scheme, parsedSettingsReg.Scheme) == 0 &&
-		isDefaultOrNilPort(parsedConifgReg) &&
-		isDefaultOrNilPort(parsedSettingsReg)
+		isNilPortOrStandardSchemePort(parsedConifgReg) &&
+		isNilPortOrStandardSchemePort(parsedSettingsReg)
 	return compareWithoutDefaultPorts, nil
 }
 
@@ -129,7 +133,7 @@ func (p *Plugin) Validate() error {
 	if p.settings.SkipRegistryUriValidation {
 		p.settings.npm = npm
 		return nil
-	} else if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 || registriesMatchWithDefaultPorts {
+	} else if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 && !registriesMatchWithDefaultPorts {
 		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
