@@ -107,7 +107,7 @@ func TestIsDefaultOrNilPort(t *testing.T) {
 	assert.Equal(t, false, resultWithNonStandardPortHTTP)
 }
 
-func TestCheckMatchingUrlWithDefaultPorts(t *testing.T) {
+func TestCompareRegistries(t *testing.T) {
 	p := initPlugin()
 	goodReg := "https://fakenpm.reg.org/good/path"
 	goodRegWithPort := "https://fakenpm.reg.org:443/good/path"
@@ -115,24 +115,24 @@ func TestCheckMatchingUrlWithDefaultPorts(t *testing.T) {
 
 	p.settings.Registry = goodReg
 	p.settings.npm.Config.Registry = goodReg
-	ValidNoPorts, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
+	ValidNoPorts, _ := p.CompareRegistries(p.settings.npm.Config)
 	assert.Equal(t, true, ValidNoPorts)
 
 	p.settings.Registry = goodRegWithPort
-	SameUrlOneWithPort, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
+	SameUrlOneWithPort, _ := p.CompareRegistries(p.settings.npm.Config)
 	assert.Equal(t, true, SameUrlOneWithPort)
 
 	p.settings.Registry = goodRegWithPort
 	p.settings.npm.Config.Registry = goodRegWithPort
-	SameUrlBothWithPort, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
+	SameUrlBothWithPort, _ := p.CompareRegistries(p.settings.npm.Config)
 	assert.Equal(t, true, SameUrlBothWithPort)
 
 	p.settings.Registry = "invalidUri"
-	invalidUriTest, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
+	invalidUriTest, _ := p.CompareRegistries(p.settings.npm.Config)
 	assert.Equal(t, false, invalidUriTest)
 
 	p.settings.Registry = goodRegWithNonStandardPort
-	nonStandardPortTest, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
+	nonStandardPortTest, _ := p.CompareRegistries(p.settings.npm.Config)
 	assert.Equal(t, false, nonStandardPortTest)
 }
 

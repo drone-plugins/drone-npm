@@ -77,21 +77,24 @@ func isNilPortOrStandardSchemePort(u *url.URL) bool {
 	return true
 }
 
-func (p *Plugin) CheckMatchingUrlWithDefaultPorts(nc npmConfig) (bool, error) {
+func (p *Plugin) CompareRegistries(nc npmConfig) (bool, error) {
 	parsedConifgReg, err := url.Parse(nc.Registry)
 	if err != nil {
-		return false, fmt.Errorf("package.json registry: %s failed to parse.", nc.Registry)
+		return false, fmt.Errorf("package.json registry: %s failed to parse", nc.Registry)
 	}
 	parsedSettingsReg, err := url.Parse(p.settings.Registry)
 	if err != nil {
-		return false, fmt.Errorf("Drone yaml npm Registry: %s failed to parse.", p.settings.Registry)
+		return false, fmt.Errorf("drone yaml npm Registry: %s failed to parse", p.settings.Registry)
 	}
-	compareWithoutDefaultPorts := strings.Compare(parsedConifgReg.Hostname(), parsedSettingsReg.Hostname()) == 0 &&
-		strings.Compare(parsedConifgReg.Scheme, parsedSettingsReg.Scheme) == 0 &&
-		strings.Compare(parsedConifgReg.Path, parsedSettingsReg.Path) == 0 &&
-		isNilPortOrStandardSchemePort(parsedConifgReg) &&
-		isNilPortOrStandardSchemePort(parsedSettingsReg)
-	return compareWithoutDefaultPorts, nil
+
+	ncDefaultOrNilPort := isNilPortOrStandardSchemePort(parsedConifgReg)
+	dyDefaultOrNilPort := isNilPortOrStandardSchemePort(parsedSettingsReg)
+
+	matchingStatus := parsedSettingsReg.Scheme == parsedConifgReg.Scheme &&
+		parsedSettingsReg.Path == parsedConifgReg.Path &&
+		parsedSettingsReg.Hostname() == parsedConifgReg.Hostname() &&
+		dyDefaultOrNilPort == ncDefaultOrNilPort
+	return matchingStatus, nil
 }
 
 // Validate handles the settings validation of the plugin.
@@ -127,19 +130,15 @@ func (p *Plugin) Validate() error {
 		p.settings.Registry = globalRegistry
 	}
 
-	registriesMatchWithDefaultPorts, err := p.CheckMatchingUrlWithDefaultPorts(npm.Config)
+	registriesMatch, err := p.CompareRegistries(npm.Config)
 	if err != nil {
-		registriesMatchWithDefaultPorts = false // if there's an error using this default to standard validation by string compare
+		return fmt.Errorf("issue comparing the registries specified in drone yaml (%s) and package.json: (%s)", p.settings.Registry, npm.Config.Registry) // if there's an error using this default to standard validation by string compare
 	}
-	if p.settings.SkipRegistryUriValidation {
-		p.settings.npm = npm
-		return nil
-	} else if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 && !registriesMatchWithDefaultPorts {
+	if !registriesMatch && !p.settings.SkipRegistryUriValidation {
 		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
 	p.settings.npm = npm
-
 	return nil
 }
 
