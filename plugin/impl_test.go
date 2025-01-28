@@ -17,7 +17,7 @@ import (
 func initFakeSettings() Settings {
 	nc := npmConfig{
 		// Note: this registry is the one that would come from publishConfig in package.json
-		Registry: "https://fakenpm.reg.org",
+		Registry: "SetByFn_readPackageFile",
 	}
 	np := npmPackage{
 		Name:    "Test Package",
@@ -31,7 +31,7 @@ func initFakeSettings() Settings {
 		SkipWhoami: false,
 		Email:      "fake@user.tst",
 		// Note: this registry is the one that would come from drone yaml
-		Registry:                  "https://fakenpm.reg.org",
+		Registry:                  "https://fakenpm.reg.org/good/path",
 		Folder:                    "__test__",
 		FailOnVersionConflict:     true,
 		Tag:                       "",
@@ -109,22 +109,31 @@ func TestIsDefaultOrNilPort(t *testing.T) {
 
 func TestCheckMatchingUrlWithDefaultPorts(t *testing.T) {
 	p := initPlugin()
-	p.settings.Registry = p.settings.npm.Config.Registry
-	ValidNoPorts, _ := p.CheckMatchingUrlWithDefaultPorts()
+	goodReg := "https://fakenpm.reg.org/good/path"
+	goodRegWithPort := "https://fakenpm.reg.org:443/good/path"
+	goodRegWithNonStandardPort := "https://fakenpm.reg.org:8443/good/path"
+
+	p.settings.Registry = goodReg
+	p.settings.npm.Config.Registry = goodReg
+	ValidNoPorts, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
 	assert.Equal(t, true, ValidNoPorts)
 
-	p.settings.Registry = p.settings.npm.Config.Registry + ":443"
-	SameUrlOneWithPort, _ := p.CheckMatchingUrlWithDefaultPorts()
+	p.settings.Registry = goodRegWithPort
+	SameUrlOneWithPort, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
 	assert.Equal(t, true, SameUrlOneWithPort)
 
-	p.settings.Registry = p.settings.npm.Config.Registry + ":443"
-	p.settings.npm.Config.Registry = p.settings.npm.Config.Registry + ":443"
-	SameUrlBothWithPort, _ := p.CheckMatchingUrlWithDefaultPorts()
+	p.settings.Registry = goodRegWithPort
+	p.settings.npm.Config.Registry = goodRegWithPort
+	SameUrlBothWithPort, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
 	assert.Equal(t, true, SameUrlBothWithPort)
 
 	p.settings.Registry = "invalidUri"
-	invalidUriTest, _ := p.CheckMatchingUrlWithDefaultPorts()
+	invalidUriTest, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
 	assert.Equal(t, false, invalidUriTest)
+
+	p.settings.Registry = goodRegWithNonStandardPort
+	nonStandardPortTest, _ := p.CheckMatchingUrlWithDefaultPorts(p.settings.npm.Config)
+	assert.Equal(t, false, nonStandardPortTest)
 }
 
 func TestValidateWithInvalidFields(t *testing.T) {
@@ -162,44 +171,69 @@ func TestValidateWithRegistryVariations(t *testing.T) {
 	p := initPlugin()
 
 	// Validation Tests with Invalid Registry
-	p.settings.Registry = "fakenpm.reg.org"
+	p.settings.Registry = "fakenpm.reg.org/good/path"
 	missingSchemeErr := p.Validate()
 	if assert.NotNil(t, missingSchemeErr) {
 		assert.Contains(t, missingSchemeErr.Error(), "fakenpm.reg.org")
 	}
 
-	p.settings.Registry = "https://fakenpm.reg.org:7894"
+	p.settings.Registry = "https://fakenpm.reg.org:7894/good/path"
 	weirdPortErr := p.Validate()
 	if assert.NotNil(t, weirdPortErr) {
 		assert.Contains(t, weirdPortErr.Error(), "7894")
 	}
 
 	// Validation Tests with Default/NoPorts defined
-	p.settings.Registry = "https://fakenpm.reg.org:443"
+	p.settings.Registry = "https://fakenpm.reg.org:443/good/path"
 	defaultPortErr := p.Validate()
 	assert.Nil(t, defaultPortErr)
 
 	// Validation Tests with Failure Conditions on Registry
 
-	p.settings.Registry = "https://registry.npmjs.org/"
+	p.settings.Registry = "https://registry.npmjs.org/good/path"
 	diffRegistry := p.Validate()
 	if assert.NotNil(t, diffRegistry) {
 		assert.Contains(t, diffRegistry.Error(), "npmjs.org")
 	}
 
-	p.settings.Registry = "https://registry.npmjs.org:443/"
+	p.settings.Registry = "https://registry.npmjs.org:443/good/path"
 	diffRegistryWithPort := p.Validate()
 	if assert.NotNil(t, diffRegistryWithPort) {
 		assert.Contains(t, diffRegistryWithPort.Error(), "npmjs.org:443")
 	}
 
+	// Validation Failures with standardPorts But DiffPaths
+	p.settings.Registry = "https://registry.npmjs.org:443/bad/path"
+	p.settings.Folder = "__testwithport__"
+	diffRegistryWithPort = p.Validate()
+	if assert.NotNil(t, diffRegistryWithPort) {
+		assert.Contains(t, diffRegistryWithPort.Error(), "npmjs.org:443/bad")
+	}
+
+	// Same path different ports
+	p.settings.Registry = "https://registry.npmjs.org:8443/good/path"
+	p.settings.Folder = "__testwithport__"
+	diffRegistryWithPort = p.Validate()
+	if assert.NotNil(t, diffRegistryWithPort) {
+		assert.Contains(t, diffRegistryWithPort.Error(), "npmjs.org:8443/good")
+	}
+
+	// Same path different ports and schemes
+	p.settings.Registry = "http://registry.npmjs.org:80/good/path"
+	p.settings.Folder = "__testwithport__"
+	diffRegistryWithPort = p.Validate()
+	if assert.NotNil(t, diffRegistryWithPort) {
+		assert.Contains(t, diffRegistryWithPort.Error(), "npmjs.org:80/good")
+	}
+
 	// Validation Tests with SkipRegistryCheck
 	p.settings.SkipRegistryUriValidation = true
-	p.settings.Registry = "fakenpm.reg.org"
+	p.settings.Registry = "fakenpm.reg.org/good/path"
 	skipMissingSchemeErr := p.Validate()
 	assert.Nil(t, skipMissingSchemeErr)
 
-	p.settings.Registry = "https://fakenpm.reg.org:7894"
+	p.settings.SkipRegistryUriValidation = true
+	p.settings.Registry = "https://fakenpm.reg.org:7894/good/path"
 	skipWeirdPortErr := p.Validate()
 	assert.Nil(t, skipWeirdPortErr)
 }

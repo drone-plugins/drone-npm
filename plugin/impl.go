@@ -77,10 +77,10 @@ func isNilPortOrStandardSchemePort(u *url.URL) bool {
 	return true
 }
 
-func (p *Plugin) CheckMatchingUrlWithDefaultPorts() (bool, error) {
-	parsedConifgReg, err := url.Parse(p.settings.npm.Config.Registry)
+func (p *Plugin) CheckMatchingUrlWithDefaultPorts(nc npmConfig) (bool, error) {
+	parsedConifgReg, err := url.Parse(nc.Registry)
 	if err != nil {
-		return false, fmt.Errorf("package.json registry: %s failed to parse.", p.settings.npm.Config.Registry)
+		return false, fmt.Errorf("package.json registry: %s failed to parse.", nc.Registry)
 	}
 	parsedSettingsReg, err := url.Parse(p.settings.Registry)
 	if err != nil {
@@ -88,6 +88,7 @@ func (p *Plugin) CheckMatchingUrlWithDefaultPorts() (bool, error) {
 	}
 	compareWithoutDefaultPorts := strings.Compare(parsedConifgReg.Hostname(), parsedSettingsReg.Hostname()) == 0 &&
 		strings.Compare(parsedConifgReg.Scheme, parsedSettingsReg.Scheme) == 0 &&
+		strings.Compare(parsedConifgReg.Path, parsedSettingsReg.Path) == 0 &&
 		isNilPortOrStandardSchemePort(parsedConifgReg) &&
 		isNilPortOrStandardSchemePort(parsedSettingsReg)
 	return compareWithoutDefaultPorts, nil
@@ -126,7 +127,7 @@ func (p *Plugin) Validate() error {
 		p.settings.Registry = globalRegistry
 	}
 
-	registriesMatchWithDefaultPorts, err := p.CheckMatchingUrlWithDefaultPorts()
+	registriesMatchWithDefaultPorts, err := p.CheckMatchingUrlWithDefaultPorts(npm.Config)
 	if err != nil {
 		registriesMatchWithDefaultPorts = false // if there's an error using this default to standard validation by string compare
 	}
