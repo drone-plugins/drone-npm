@@ -59,26 +59,17 @@ var defaultPortMap = map[string]string{
 }
 
 func isNilPortOrStandardSchemePort(u *url.URL) bool {
-	if !strings.HasPrefix(u.Scheme, "http") {
-		//invalid schemes aren't worth checking
+	if u.Scheme != "http" && u.Scheme != "https" {
+		//invalid schemes aren't worth checking and we want http or https
 		return false
 	}
-	if u.Port() != "" {
-		if port, ok := defaultPortMap[u.Scheme]; ok {
-			return port == u.Port()
-		}
-		// this only happens if the scheme isn't in the above map.
-		// since everything should be http or https for npm it's unlikely
-		// But In this case the standard validation logic would apply later on
-		// so this is just to make sure an accidental true isn't returned
-		// npm publish also doesn't work when scheme is missing in package.json
-		return false
-	}
-	return true
+	// since we verify above that the scheme above is valid and this map
+	// is initialized in this file. It's safe to assume the key is in the map
+	return u.Port() == "" || u.Port() == defaultPortMap[u.Scheme]
 }
 
 func (p *Plugin) CompareRegistries(nc npmConfig) (bool, error) {
-	parsedConifgReg, err := url.Parse(nc.Registry)
+	parsedConfigReg, err := url.Parse(nc.Registry)
 	if err != nil {
 		return false, fmt.Errorf("package.json registry: %s failed to parse", nc.Registry)
 	}
@@ -87,12 +78,12 @@ func (p *Plugin) CompareRegistries(nc npmConfig) (bool, error) {
 		return false, fmt.Errorf("drone yaml npm Registry: %s failed to parse", p.settings.Registry)
 	}
 
-	ncDefaultOrNilPort := isNilPortOrStandardSchemePort(parsedConifgReg)
+	ncDefaultOrNilPort := isNilPortOrStandardSchemePort(parsedConfigReg)
 	dyDefaultOrNilPort := isNilPortOrStandardSchemePort(parsedSettingsReg)
 
-	matchingStatus := parsedSettingsReg.Scheme == parsedConifgReg.Scheme &&
-		parsedSettingsReg.Path == parsedConifgReg.Path &&
-		parsedSettingsReg.Hostname() == parsedConifgReg.Hostname() &&
+	matchingStatus := parsedSettingsReg.Scheme == parsedConfigReg.Scheme &&
+		parsedSettingsReg.Path == parsedConfigReg.Path &&
+		parsedSettingsReg.Hostname() == parsedConfigReg.Hostname() &&
 		dyDefaultOrNilPort == ncDefaultOrNilPort
 	return matchingStatus, nil
 }
