@@ -31,13 +31,13 @@ func initFakeSettings() Settings {
 		SkipWhoami: false,
 		Email:      "fake@user.tst",
 		// Note: this registry is the one that would come from drone yaml
-		Registry:                  "https://fakenpm.reg.org/good/path",
-		Folder:                    "__test__",
-		FailOnVersionConflict:     true,
-		Tag:                       "",
-		Access:                    "",
-		SkipRegistryUriValidation: false,
-		npm:                       &np,
+		Registry:               "https://fakenpm.reg.org/good/path",
+		Folder:                 "__test__",
+		FailOnVersionConflict:  true,
+		Tag:                    "",
+		Access:                 "",
+		SkipRegistryValidation: false,
+		npm:                    &np,
 	}
 }
 
@@ -227,12 +227,12 @@ func TestValidateWithRegistryVariations(t *testing.T) {
 	}
 
 	// Validation Tests with SkipRegistryCheck
-	p.settings.SkipRegistryUriValidation = true
+	p.settings.SkipRegistryValidation = true
 	p.settings.Registry = "fakenpm.reg.org/good/path"
 	skipMissingSchemeErr := p.Validate()
 	assert.Nil(t, skipMissingSchemeErr)
 
-	p.settings.SkipRegistryUriValidation = true
+	p.settings.SkipRegistryValidation = true
 	p.settings.Registry = "https://fakenpm.reg.org:7894/good/path"
 	skipWeirdPortErr := p.Validate()
 	assert.Nil(t, skipWeirdPortErr)

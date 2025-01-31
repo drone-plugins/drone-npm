@@ -23,17 +23,17 @@ import (
 type (
 	// Settings for the Plugin.
 	Settings struct {
-		Username                  string
-		Password                  string
-		Token                     string
-		SkipWhoami                bool
-		Email                     string
-		Registry                  string
-		Folder                    string
-		FailOnVersionConflict     bool
-		Tag                       string
-		Access                    string
-		SkipRegistryUriValidation bool
+		Username               string
+		Password               string
+		Token                  string
+		SkipWhoami             bool
+		Email                  string
+		Registry               string
+		Folder                 string
+		FailOnVersionConflict  bool
+		Tag                    string
+		Access                 string
+		SkipRegistryValidation bool
 
 		npm *npmPackage
 	}
@@ -125,7 +125,7 @@ func (p *Plugin) Validate() error {
 	if err != nil {
 		return fmt.Errorf("issue comparing the registries specified in drone yaml (%s) and package.json: (%s)", p.settings.Registry, npm.Config.Registry) // if there's an error using this default to standard validation by string compare
 	}
-	if !registriesMatch && !p.settings.SkipRegistryUriValidation {
+	if !registriesMatch && !p.settings.SkipRegistryValidation {
 		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
