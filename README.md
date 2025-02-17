@@ -35,12 +35,38 @@ docker build \
 ```
 
 ## Usage
-
+### Standard Local Usage
 ```console
 docker run --rm \
   -e NPM_USERNAME=drone \
   -e NPM_PASSWORD=password \
   -e NPM_EMAIL=drone@drone.io \
+  -v $(pwd):$(pwd) \
+  -w $(pwd) \
+  plugins/npm
+```
+#### With a specified registry for validation
+This will allow the setting of the defautl publishing registry. This will also raise a validation error if the publish configuration of the npm package is not pointing to the specified registry.
+```console
+docker run --rm \
+  -e NPM_USERNAME=drone \
+  -e NPM_PASSWORD=password \
+  -e NPM_EMAIL=drone@drone.io \
+  -e NPM_REGISTRY="https://fakenpm.reg.org/good/path" \
+  -v $(pwd):$(pwd) \
+  -w $(pwd) \
+  plugins/npm
+```
+
+#### Ignore registry validation
+This will all the setting of a default publishing registry but will skip the verification of it being the same as the one in the npmrc. In this instance no validation error is raised and the registry in the npm rc is used
+```console
+docker run --rm \
+  -e NPM_USERNAME=drone \
+  -e NPM_PASSWORD=password \
+  -e NPM_EMAIL=drone@drone.io \
+  -e NPM_REGISTRY="https://fakenpm.reg.org/good/path" \
+  -e PLUGIN_SKIP_REGISTRY_VALIDATION=true \
   -v $(pwd):$(pwd) \
   -w $(pwd) \
   plugins/npm
