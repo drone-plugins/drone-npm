@@ -60,7 +60,7 @@ var defaultPortMap = map[string]string{
 
 func isNilPortOrStandardSchemePort(u *url.URL) bool {
 	if u.Scheme != "http" && u.Scheme != "https" {
-		//invalid schemes aren't worth checking and we want http or https
+		// invalid schemes aren't worth checking and we want http or https
 		return false
 	}
 	// since we verify above that the scheme above is valid and this map
@@ -123,7 +123,11 @@ func (p *Plugin) Validate() error {
 
 	registriesMatch, err := p.CompareRegistries(npm.Config)
 	if err != nil {
-		return fmt.Errorf("issue comparing the registries specified in drone yaml (%s) and package.json: (%s)", p.settings.Registry, npm.Config.Registry) // if there's an error using this default to standard validation by string compare
+		return fmt.Errorf(
+			"issue comparing the registries specified in drone yaml (%s) and package.json: (%s)",
+			p.settings.Registry,
+			npm.Config.Registry,
+		) // if there's an error using this default to standard validation by string compare
 	}
 	if !registriesMatch && !p.settings.SkipRegistryValidation {
 		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
