@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testWithPort = "__testwithport__"
+
 func initFakeSettings() Settings {
 	nc := npmConfig{
 		// Note: this registry is the one that would come from publishConfig in package.json
@@ -203,7 +205,7 @@ func TestValidateWithRegistryVariations(t *testing.T) {
 
 	// Validation failures with standard ports but different paths
 	p.settings.Registry = "https://registry.npmjs.org:443/bad/path"
-	p.settings.Folder = "__testwithport__"
+	p.settings.Folder = testWithPort
 	diffRegistryWithPort = p.Validate()
 	if assert.NotNil(t, diffRegistryWithPort) {
 		assert.Contains(t, diffRegistryWithPort.Error(), "npmjs.org:443/bad")
@@ -211,7 +213,7 @@ func TestValidateWithRegistryVariations(t *testing.T) {
 
 	// Same path different ports
 	p.settings.Registry = "https://registry.npmjs.org:8443/good/path"
-	p.settings.Folder = "__testwithport__"
+	p.settings.Folder = testWithPort
 	diffRegistryWithPort = p.Validate()
 	if assert.NotNil(t, diffRegistryWithPort) {
 		assert.Contains(t, diffRegistryWithPort.Error(), "npmjs.org:8443/good")
@@ -219,7 +221,7 @@ func TestValidateWithRegistryVariations(t *testing.T) {
 
 	// Same path different ports and schemes
 	p.settings.Registry = "http://registry.npmjs.org:80/good/path"
-	p.settings.Folder = "__testwithport__"
+	p.settings.Folder = testWithPort
 	diffRegistryWithPort = p.Validate()
 	if assert.NotNil(t, diffRegistryWithPort) {
 		assert.Contains(t, diffRegistryWithPort.Error(), "npmjs.org:80/good")
