@@ -126,7 +126,7 @@ func (p *Plugin) Validate() error {
 		return fmt.Errorf(
 			"issue comparing the registries specified in drone yaml (%s) and package.json: (%s)",
 			p.settings.Registry,
-			npm.Config.Registry
+			npm.Config.Registry,
 		) // if there's an error using this default to standard validation by string compare
 	}
 	if !registriesMatch && !p.settings.SkipRegistryValidation {
