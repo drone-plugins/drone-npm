@@ -23,16 +23,17 @@ import (
 type (
 	// Settings for the Plugin.
 	Settings struct {
-		Username              string
-		Password              string
-		Token                 string
-		SkipWhoami            bool
-		Email                 string
-		Registry              string
-		Folder                string
-		FailOnVersionConflict bool
-		Tag                   string
-		Access                string
+		Username               string
+		Password               string
+		Token                  string
+		SkipWhoami             bool
+		Email                  string
+		Registry               string
+		Folder                 string
+		FailOnVersionConflict  bool
+		Tag                    string
+		Access                 string
+		SkipRegistryValidation bool
 
 		npm *npmPackage
 	}
@@ -50,6 +51,42 @@ type (
 
 // globalRegistry defines the default NPM registry.
 const globalRegistry = "https://registry.npmjs.org/"
+
+// May be better as an enum in order to make it a const
+var defaultPortMap = map[string]string{
+	"http":  "80",
+	"https": "443",
+}
+
+func isNilPortOrStandardSchemePort(u *url.URL) bool {
+	if u.Scheme != "http" && u.Scheme != "https" {
+		//invalid schemes aren't worth checking and we want http or https
+		return false
+	}
+	// since we verify above that the scheme above is valid and this map
+	// is initialized in this file. It's safe to assume the key is in the map
+	return u.Port() == "" || u.Port() == defaultPortMap[u.Scheme]
+}
+
+func (p *Plugin) CompareRegistries(nc npmConfig) (bool, error) {
+	parsedConfigReg, err := url.Parse(nc.Registry)
+	if err != nil {
+		return false, fmt.Errorf("package.json registry: %s failed to parse", nc.Registry)
+	}
+	parsedSettingsReg, err := url.Parse(p.settings.Registry)
+	if err != nil {
+		return false, fmt.Errorf("drone yaml npm Registry: %s failed to parse", p.settings.Registry)
+	}
+
+	ncDefaultOrNilPort := isNilPortOrStandardSchemePort(parsedConfigReg)
+	dyDefaultOrNilPort := isNilPortOrStandardSchemePort(parsedSettingsReg)
+
+	matchingStatus := parsedSettingsReg.Scheme == parsedConfigReg.Scheme &&
+		parsedSettingsReg.Path == parsedConfigReg.Path &&
+		parsedSettingsReg.Hostname() == parsedConfigReg.Hostname() &&
+		dyDefaultOrNilPort == ncDefaultOrNilPort
+	return matchingStatus, nil
+}
 
 // Validate handles the settings validation of the plugin.
 func (p *Plugin) Validate() error {
@@ -84,12 +121,15 @@ func (p *Plugin) Validate() error {
 		p.settings.Registry = globalRegistry
 	}
 
-	if strings.Compare(p.settings.Registry, npm.Config.Registry) != 0 {
+	registriesMatch, err := p.CompareRegistries(npm.Config)
+	if err != nil {
+		return fmt.Errorf("issue comparing the registries specified in drone yaml (%s) and package.json: (%s)", p.settings.Registry, npm.Config.Registry) // if there's an error using this default to standard validation by string compare
+	}
+	if !registriesMatch && !p.settings.SkipRegistryValidation {
 		return fmt.Errorf("registry values do not match .drone.yml: %s package.json: %s", p.settings.Registry, npm.Config.Registry)
 	}
 
 	p.settings.npm = npm
-
 	return nil
 }
 

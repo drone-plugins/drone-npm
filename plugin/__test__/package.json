@@ -1,0 +1,8 @@
+{
+    "name": "my-awesome-package",
+    "version": "1.0.0",
+    "author": "Your Name <email@example.com> (https://example.com)",
+    "publishConfig": {
+        "registry": "https://fakenpm.reg.org/good/path"
+    }
+}
