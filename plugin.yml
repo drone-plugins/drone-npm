@@ -1,0 +1,100 @@
+name: NPM
+description: |
+  The NPM plugin can be used to publish JavaScript libraries to both the public
+  NPM registry as well as on-prem registries.
+author: Don Olmstead
+image: plugins/npm
+repository: https://github.com/drone-plugins/drone-npm
+
+allOf:
+  - $ref: '#/authentication'
+
+properties:
+  email:
+    type: string
+    description: >
+      The e-mail address associated with the account to publish with.
+
+  registry:
+    type: string
+    description: >
+      The registry URL to publish to.
+    default: https://registry.npmjs.org
+
+  folder:
+    type: string
+    description: >
+      The folder, relative to the workspace, containing the library.
+
+      This can be specified when publishing different packages in a
+      mono-repo.
+    default: /
+
+  tag:
+    type: string
+    default: latest
+    description: >
+      The NPM tag to publish with.
+
+      This can be used for pre-release versions of libraries. See
+      [label](https://docs.npmjs.com/getting-started/using-tags)
+      documentation for further information on how to use tags when
+      publishing.
+
+  access:
+    type: string
+    enum:
+      - public
+      - restricted
+    default: public
+    description: >
+      The access for a scoped NPM package.
+
+authentication:
+  type: object
+  description: >
+    A NPM libray can be published through different authentication schemes.
+    A user password can be provided or a [deploy token]
+    (https://docs.npmjs.com/getting-started/working_with_tokens) can be created
+    to act on behalf of the user.
+
+    An authentication token should be preferred as it has additional security
+    for an account.
+  oneOf:
+    - $ref: '#/authentication/user'
+    - $ref: '#/authentication/token'
+
+  user:
+    type: object
+    description: >
+      The library can be published using a username password.
+    required:
+      - username
+      - password
+
+    properties:
+      username:
+        type: string
+        description: >
+          The username of the account to publish to the registry with.
+        secret: true
+
+      password:
+        type: string
+        description: >
+          The password for the account to publish to the registry with.
+        secret: true
+
+  token:
+    type: object
+    description: >
+      The library can be published using a token generated from the associated
+      NPM registry.
+    required:
+      - token
+
+    properties:
+      token:
+        type: string
+        description: >
+          The token to use to publish to the registry with.
