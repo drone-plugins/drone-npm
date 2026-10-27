@@ -19,7 +19,7 @@ steps:
       - name: gopath
         path: "/go"
   - name: test
-    image: golang:1.19
+    image: golang:1.26.10@sha256:24a707af49702fa44f02785475d02fb752f6982d3e9c0afb7696e1f0204e7ce9
     commands:
       - go test -cover ./...
     volumes:
@@ -46,7 +46,7 @@ pool:
 
 steps:
   - name: environment
-    image: golang:1.19
+    image: golang:1.26.10@sha256:24a707af49702fa44f02785475d02fb752f6982d3e9c0afb7696e1f0204e7ce9
     pull: always
     environment:
       CGO_ENABLED: "0"
@@ -54,7 +54,7 @@ steps:
       - go version
       - go env
   - name: build
-    image: golang:1.19
+    image: golang:1.26.10@sha256:24a707af49702fa44f02785475d02fb752f6982d3e9c0afb7696e1f0204e7ce9
     environment:
       CGO_ENABLED: "0"
     commands:
@@ -90,7 +90,7 @@ pool:
 
 steps:
   - name: environment
-    image: golang:1.19
+    image: golang:1.26.10@sha256:24a707af49702fa44f02785475d02fb752f6982d3e9c0afb7696e1f0204e7ce9
     pull: always
     environment:
       CGO_ENABLED: "0"
@@ -98,7 +98,7 @@ steps:
       - go version
       - go env
   - name: build
-    image: golang:1.19
+    image: golang:1.26.10@sha256:24a707af49702fa44f02785475d02fb752f6982d3e9c0afb7696e1f0204e7ce9
     environment:
       CGO_ENABLED: "0"
     commands:
